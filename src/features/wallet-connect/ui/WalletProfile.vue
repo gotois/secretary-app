@@ -42,11 +42,13 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useQuasar, QField, QIcon, copyToClipboard } from 'quasar'
 import useWalletStore from '@/entities/wallet'
+import { useModal } from '@/shared/lib/useModal'
 import PhantomWalletLogin from './PhantomWalletLogin.vue'
 
 const walletStore = useWalletStore()
 const { getWalletLD } = storeToRefs(walletStore)
 const $q = useQuasar()
+const modal = useModal()
 const i18n = useI18n()
 const $t = i18n.t
 
@@ -58,15 +60,10 @@ function onWalletError(error: Error) {
   })
 }
 
-function onSkipWallet() {
-  const dialog = $q.dialog({
-    message: $t('tutorial.welcome.demoHint'),
-    cancel: true,
-    persistent: true,
-  })
-  dialog.onOk(() => {
+async function onSkipWallet() {
+  if (await modal.confirm($t('tutorial.welcome.demoHint'))) {
     // emit('free')
-  })
+  }
 }
 async function onCopyText(text: string) {
   await copyToClipboard(text)

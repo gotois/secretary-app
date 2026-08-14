@@ -48,7 +48,9 @@
     </QCardSection>
     <QPopupProxy>
       <TaskFull
-        style="width: 640px"
+        :style="{
+          width: $q.platform.is.desktop ? '640px' : '320px'
+        }"
         :event-id="eventId"
         :title="title"
         :description="description"

@@ -80,25 +80,26 @@ import { exportDB, importInto } from 'dexie-export-import'
 import useContractStore from '@/entities/contract'
 import { db } from '@/shared/lib/databaseService'
 import { getContent, generate } from '@/shared/lib/zipHelper'
+import { useModal } from '@/shared/lib/useModal'
 
 const $t = useI18n().t
 const $q = useQuasar()
+const modal = useModal()
 const contractStore = useContractStore()
 
 const file = ref<File>()
 const contractsCount = computed(() => contractStore.contracts.length)
 
-function onFileSelected() {
-  const dialog = $q.dialog({
-    title: $t('components.database.fileImportDialog.title'),
-    message: $t('components.database.fileImportDialog.message'),
-    cancel: true,
-    persistent: false,
-  })
-
-  dialog.onOk(async () => {
+async function onFileSelected() {
+  const confirmed = await modal.confirm(
+    [
+      $t('components.database.fileImportDialog.title'),
+      $t('components.database.fileImportDialog.message'),
+    ].join('\n'),
+  )
+  if (confirmed) {
     await onImportDB()
-  })
+  }
 }
 
 function onRejectedEntries() {

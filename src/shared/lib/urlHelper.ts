@@ -1,5 +1,5 @@
 import { openURL, Platform } from 'quasar'
-import { openLink, openTelegramLink } from '@telegram-apps/sdk'
+import { openLink, openTelegramLink } from '@tma.js/sdk'
 
 export function validUrlString(url: string) {
   if (!url || url.length < 10) {

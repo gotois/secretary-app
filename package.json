@@ -59,7 +59,7 @@
     "@schedule-x/vue": "4.1.0",
     "@solana/web3.js": "1.98.4",
     "@tanstack/vue-query": "5.101.0",
-    "@telegram-apps/sdk": "3.11.8",
+    "@tma.js/sdk": "3.3.0",
     "base58-universal": "2.0.0",
     "dexie": "4.0.11",
     "dexie-export-import": "4.1.4",

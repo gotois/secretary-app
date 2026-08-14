@@ -36,7 +36,7 @@ import {
   QSkeleton,
 } from 'quasar'
 import { useI18n } from 'vue-i18n'
-import { mainButton, postEvent } from '@telegram-apps/sdk'
+import { mainButton, postEvent } from '@tma.js/sdk'
 import { useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/shared/config/routes'
 import { isChatGPT, isTMA } from '@/shared/lib/detector'
@@ -125,7 +125,7 @@ onMounted(() => {
   }
   mainButton.setParams({
     text: 'Создать',
-    backgroundColor: '#2481cc',
+    bgColor: '#2481cc',
     textColor: '#ffffff',
     isEnabled: true,
     isVisible: true,

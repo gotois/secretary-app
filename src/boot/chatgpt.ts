@@ -13,6 +13,7 @@ import { isChatGPT } from '@/shared/lib/detector'
 import {
   HOST_BRIDGE_KEY,
   initializeHostBridge,
+  isChatGPTMessageModalState,
   type ChatGPTModalState,
   type HostBridge,
 } from '@/shared/lib/hostBridge'
@@ -29,6 +30,13 @@ type LifecycleLogger = (event: string, details?: LifecycleDetails) => void
 export function getModalState(
   input?: Record<string, unknown>,
 ): ChatGPTModalState | undefined {
+  if (isChatGPTMessageModalState(input)) {
+    return {
+      mode: input.mode,
+      message: input.message,
+      requestId: input.requestId,
+    }
+  }
   if (
     input?.mode !== 'create' &&
     input?.mode !== 'view' &&

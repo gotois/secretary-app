@@ -46,10 +46,18 @@ export interface ChatGPTStructuredContent {
   timezone?: string
 }
 
-export interface ChatGPTModalState {
+export interface ChatGPTTaskModalState {
   mode: 'view' | 'edit' | 'create'
   taskId?: number
 }
+
+export interface ChatGPTMessageModalState {
+  mode: 'alert' | 'confirm'
+  message: string
+  requestId: string
+}
+
+export type ChatGPTModalState = ChatGPTTaskModalState | ChatGPTMessageModalState
 
 export interface ChatGPTWidgetState {
   content?: ChatGPTStructuredContent
@@ -117,7 +125,30 @@ type ToolResult = McpUiToolResultNotification['params']
 
 function isModalInput(
   input?: Record<string, unknown>,
-): input is Record<string, unknown> & { mode: ChatGPTModalState['mode'] } {
+): input is Record<string, unknown> & ChatGPTModalState {
+  if (input?.mode === 'alert' || input?.mode === 'confirm') {
+    return (
+      typeof input.message === 'string' && typeof input.requestId === 'string'
+    )
+  }
+  return (
+    input?.mode === 'create' || input?.mode === 'view' || input?.mode === 'edit'
+  )
+}
+
+export function isChatGPTMessageModalState(
+  input?: Record<string, unknown>,
+): input is Record<string, unknown> & ChatGPTMessageModalState {
+  return (
+    (input?.mode === 'alert' || input?.mode === 'confirm') &&
+    typeof input.message === 'string' &&
+    typeof input.requestId === 'string'
+  )
+}
+
+export function isChatGPTTaskModalState(
+  input?: Record<string, unknown>,
+): input is Record<string, unknown> & ChatGPTTaskModalState {
   return (
     input?.mode === 'create' || input?.mode === 'view' || input?.mode === 'edit'
   )

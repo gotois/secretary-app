@@ -88,11 +88,13 @@ import {
   QCard,
   QCardSection,
   QScrollArea,
+  QSpace,
   QPage,
 } from 'quasar'
 import useAuthStore from '@/entities/oidc-session'
 import useTFAStore from '@/features/two-factor-auth'
 import { open } from '@/shared/lib/urlHelper'
+import { useModal } from '@/shared/lib/useModal'
 import { storeToRefs } from 'pinia'
 
 const authStore = useAuthStore()
@@ -109,6 +111,7 @@ const { activated } = storeToRefs(tfaStore)
 const showOTPDialog = ref(false)
 
 const $q = useQuasar()
+const modal = useModal()
 const $t = useI18n().t
 
 function otpRule(token: string) {
@@ -118,16 +121,11 @@ function otpRule(token: string) {
   return true
 }
 
-function onOTPChange(value: string) {
+async function onOTPChange(value: string) {
   if (!activated.value || value.length) {
     return
   }
-  const dialog = $q.dialog({
-    message: $t('components.otp.pinDialog.message'),
-    cancel: true,
-    persistent: true,
-  })
-  dialog.onOk(() => {
+  if (await modal.confirm($t('components.otp.pinDialog.message'))) {
     try {
       tfaStore.deactivate2fa()
       authStore.removeAuthValue()
@@ -142,20 +140,15 @@ function onOTPChange(value: string) {
         message: $t('components.otp.pinDialog.fail'),
       })
     }
-  })
+  }
   showOTPDialog.value = false
 }
 
-function onOTPHandleComplete(token: string) {
+async function onOTPHandleComplete(token: string) {
   if (!tfaStore.verify(token)) {
     return
   }
-  const dialog = $q.dialog({
-    message: $t('components.otp.saveDialog.message'),
-    cancel: true,
-    persistent: true,
-  })
-  dialog.onOk(() => {
+  if (await modal.confirm($t('components.otp.saveDialog.message'))) {
     try {
       tfaStore.activate2fa()
       authStore.setTryAuthValue()
@@ -170,7 +163,7 @@ function onOTPHandleComplete(token: string) {
         message: $t('components.otp.saveDialog.fail'),
       })
     }
-  })
+  }
   showOTPDialog.value = false
 }
 

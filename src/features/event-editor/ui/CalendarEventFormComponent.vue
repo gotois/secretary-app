@@ -390,6 +390,7 @@ import { isChatGPT, isTMA } from '@/shared/lib/detector'
 import useEventStore from '../model/store'
 import { prettyDate, toDatetimeLocal } from '@/shared/lib/dateHelper'
 import { ROUTE_NAMES } from '@/shared/config/routes'
+import { useModal } from '@/shared/lib/useModal'
 
 interface TaskObject {
   id_task: number
@@ -429,6 +430,7 @@ const emit = defineEmits<{
 }>()
 
 const $q = useQuasar()
+const modal = useModal()
 useI18n()
 const router = useRouter()
 const route = useRoute()
@@ -681,16 +683,9 @@ async function removeTask(): Promise<void> {
   }
 }
 
-function onRemove() {
-  if (isChatGPT.value) {
-    void removeTask()
-    return
+async function onRemove() {
+  if (await modal.confirm(`Удалить событие?\n«${props.task.name}»`)) {
+    await removeTask()
   }
-  $q.dialog({
-    title: 'Удалить событие?',
-    message: `«${props.task.name}»`,
-    ok: { label: 'Удалить', color: 'negative', flat: true },
-    cancel: { label: 'Отмена', flat: true },
-  }).onOk(removeTask)
 }
 </script>

@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 import { Platform } from 'quasar'
-import * as tgAppSDK from '@telegram-apps/sdk'
+import * as tgAppSDK from '@tma.js/sdk'
 import { host } from '../../../twa-manifest.json'
 import { isChatGPTHost } from './chatgptHost'
 

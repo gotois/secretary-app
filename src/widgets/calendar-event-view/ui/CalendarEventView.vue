@@ -47,7 +47,7 @@ import {
 } from 'quasar'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { mainButton, postEvent } from '@telegram-apps/sdk'
+import { mainButton, postEvent } from '@tma.js/sdk'
 import { ROUTE_NAMES } from '@/shared/config/routes'
 import { useEventStore } from '@/features/event-editor'
 import { isChatGPT, isTMA } from '@/shared/lib/detector'
@@ -149,7 +149,7 @@ onMounted(() => {
   }
   mainButton.setParams({
     text: 'Обновить',
-    backgroundColor: '#2481cc',
+    bgColor: '#2481cc',
     textColor: '#ffffff',
     isEnabled: true,
     isVisible: !isViewMode.value,

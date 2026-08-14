@@ -236,9 +236,9 @@ import {
   mainButton,
   popup,
   requestContact,
-  hapticFeedbackNotificationOccurred,
+  hapticFeedback,
   retrieveRawInitData,
-} from '@telegram-apps/sdk'
+} from '@tma.js/sdk'
 
 const $t = useI18n().t
 const $q = useQuasar()
@@ -375,15 +375,15 @@ async function onMainButtonClick() {
     }
     await requestContact()
 
-    if (hapticFeedbackNotificationOccurred.isAvailable()) {
-      hapticFeedbackNotificationOccurred('success')
+    if (hapticFeedback.notificationOccurred.isAvailable()) {
+      hapticFeedback.notificationOccurred('success')
     }
   } catch (error: unknown) {
     console.error(error)
     const message = error instanceof Error ? error.message : String(error)
 
-    if (hapticFeedbackNotificationOccurred.isAvailable()) {
-      hapticFeedbackNotificationOccurred('error')
+    if (hapticFeedback.notificationOccurred.isAvailable()) {
+      hapticFeedback.notificationOccurred('error')
     }
 
     if (popup.isSupported()) {
@@ -407,7 +407,7 @@ async function onMainButtonClick() {
 function createTMAMainButton() {
   mainButton.mount()
   mainButton.setParams({
-    backgroundColor: '#000000',
+    bgColor: '#000000',
     hasShineEffect: true,
     isEnabled: true,
     isVisible: true,

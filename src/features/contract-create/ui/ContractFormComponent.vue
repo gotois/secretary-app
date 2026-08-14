@@ -321,6 +321,7 @@ import { formatDate } from '@/shared/lib/dateHelper'
 // import { keys } from '../services/databaseService'
 import type { VerifiableCredential } from '@/shared/model/jsonld'
 import type { ImageType } from '@/shared/model/media'
+import { useModal } from '@/shared/lib/useModal'
 
 enum InputType {
   email = 'email',
@@ -351,6 +352,7 @@ const props = withDefaults(
 
 const $t = useI18n().t
 const $q = useQuasar()
+const modal = useModal()
 const contractStore = useContractStore()
 const geoStore = useGeoStore()
 
@@ -438,16 +440,11 @@ function resetForm() {
   dateNoLimit.value = false
 }
 
-function onResetForm(confirm = false) {
-  if (confirm) {
-    const dialog = $q.dialog({
-      message: $t('components.contractForm.resetDialog.message'),
-      cancel: true,
-      persistent: false,
-    })
-    dialog.onOk(() => {
-      resetForm()
-    })
+async function onResetForm(confirm = false) {
+  if (
+    confirm &&
+    !(await modal.confirm($t('components.contractForm.resetDialog.message')))
+  ) {
     return
   }
   resetForm()

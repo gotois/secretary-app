@@ -14,6 +14,27 @@
     </p>
   </main>
   <section
+    v-else-if="messageModal"
+    class="chatgpt-message-modal column q-pa-lg"
+  >
+    <p class="text-body1 q-mb-lg chatgpt-message-modal__text">
+      {{ messageModal.message }}
+    </p>
+    <div class="row justify-end q-gutter-sm">
+      <QBtn
+        v-if="messageModal.mode === 'confirm'"
+        flat
+        label="Отмена"
+        @click="completeMessageModal(false)"
+      />
+      <QBtn
+        color="primary"
+        label="OK"
+        @click="completeMessageModal(true)"
+      />
+    </div>
+  </section>
+  <section
     v-else
     class="chatgpt-calendar q-pa-md"
   >
@@ -273,10 +294,16 @@ import {
 } from 'quasar'
 import { useEventStore } from '@/features/event-editor'
 import {
+  isChatGPTMessageModalState,
   useHostBridge,
-  type ChatGPTModalState,
+  type ChatGPTTaskModalState,
   type ChatGPTTask,
 } from '@/shared/lib/hostBridge'
+import {
+  getChatGPTModalChannelName,
+  type ChatGPTModalResult,
+  useModal,
+} from '@/shared/lib/useModal'
 
 const CalendarEventFormComponent = defineAsyncComponent({
   loader: () => import('@/features/event-editor'),
@@ -285,14 +312,18 @@ const CalendarEventFormComponent = defineAsyncComponent({
 })
 
 const bridge = useHostBridge()
+const modal = useModal()
 const eventStore = useEventStore()
+const messageModal = computed(() =>
+  isChatGPTMessageModalState(bridge.toolInput) ? bridge.toolInput : null,
+)
 const initialContent = bridge.toolOutput || bridge.widgetState?.content
 const loading = ref(false)
 const loadError = ref<string | null>(null)
 const modalError = ref<string | null>(null)
-const pendingFallback = ref<ChatGPTModalState | null>(null)
+const pendingFallback = ref<ChatGPTTaskModalState | null>(null)
 const fallbackOpen = ref(false)
-const fallbackMode = ref<ChatGPTModalState['mode']>('view')
+const fallbackMode = ref<ChatGPTTaskModalState['mode']>('view')
 const fallbackTask = ref<ChatGPTTask | null>(null)
 const writingTaskId = ref<number | null>(null)
 const createDraft = ref<ChatGPTTask | null>(
@@ -302,6 +333,7 @@ const createDraft = ref<ChatGPTTask | null>(
 )
 const createdTask = ref<ChatGPTTask | null>(null)
 let unsubscribe = () => {}
+let messageModalSettled = false
 
 const writing = computed(() => writingTaskId.value !== null)
 const selectedDate = computed({
@@ -396,7 +428,7 @@ async function moveDay(delta: number): Promise<void> {
 }
 
 function setFallback(
-  mode: ChatGPTModalState['mode'],
+  mode: ChatGPTTaskModalState['mode'],
   task?: ChatGPTTask,
 ): void {
   fallbackMode.value = mode
@@ -418,10 +450,10 @@ function openFallback(): void {
 }
 
 async function openTask(
-  mode: ChatGPTModalState['mode'],
+  mode: ChatGPTTaskModalState['mode'],
   task?: ChatGPTTask,
 ): Promise<void> {
-  const params: ChatGPTModalState = {
+  const params: ChatGPTTaskModalState = {
     mode,
     taskId: task?.id_task,
   }
@@ -440,7 +472,10 @@ async function openTask(
 }
 
 async function removeTask(task: ChatGPTTask): Promise<void> {
-  if (writing.value) {
+  if (
+    writing.value ||
+    !(await modal.confirm(`Удалить событие?\n«${task.name}»`))
+  ) {
     return
   }
   writingTaskId.value = task.id_task
@@ -465,8 +500,37 @@ function onDraftSaved(): void {
   createDraft.value = null
 }
 
+function publishMessageModalResult(confirmed: boolean): void {
+  if (!messageModal.value || messageModalSettled) {
+    return
+  }
+  messageModalSettled = true
+  const result: ChatGPTModalResult = {
+    requestId: messageModal.value.requestId,
+    confirmed,
+  }
+  const channel = new BroadcastChannel(
+    getChatGPTModalChannelName(messageModal.value.requestId),
+  )
+  channel.postMessage(result)
+  channel.close()
+}
+
+function completeMessageModal(confirmed: boolean): void {
+  publishMessageModalResult(confirmed)
+  void bridge.requestClose().catch((error) => console.error(error))
+}
+
+function onPageHide(): void {
+  publishMessageModalResult(false)
+}
+
 onMounted(async () => {
   if (!bridge.isAvailable) {
+    return
+  }
+  if (messageModal.value) {
+    window.addEventListener('pagehide', onPageHide, { passive: true })
     return
   }
   const hydrated = eventStore.applyChatGPTContent(initialContent)
@@ -487,6 +551,8 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('pagehide', onPageHide)
+  publishMessageModalResult(false)
   unsubscribe()
 })
 </script>
@@ -496,6 +562,14 @@ onBeforeUnmount(() => {
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
+}
+
+.chatgpt-message-modal {
+  min-width: min(420px, calc(100vw - 32px));
+}
+
+.chatgpt-message-modal__text {
+  white-space: pre-line;
 }
 
 .chatgpt-fallback-card {

@@ -1,6 +1,6 @@
 import { LocalStorage, SessionStorage } from 'quasar'
 import { defineStore } from 'pinia'
-import { retrieveRawInitData } from '@telegram-apps/sdk'
+import { retrieveRawInitData } from '@tma.js/sdk'
 import { isTMA } from '@/shared/lib/detector'
 import {
   deleteBackendSession,

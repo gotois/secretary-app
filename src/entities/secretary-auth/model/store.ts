@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { LocalStorage } from 'quasar'
-import { retrieveRawInitData } from '@telegram-apps/sdk'
+import { retrieveRawInitData } from '@tma.js/sdk'
 import { isTMA } from '@/shared/lib/detector'
 
 interface Store {

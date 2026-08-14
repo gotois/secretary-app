@@ -362,7 +362,7 @@
     <QPageSticky
       v-if="!isTMA && !isChatGPT"
       position="bottom-right"
-      :offset="[18, 80]"
+      :offset="[18, 18]"
     >
       <QFab
         color="primary"
@@ -373,6 +373,8 @@
           color="primary"
           icon="event"
           :label="$t('pages.calendar.newEvent')"
+          anchor="start"
+          label-position="right"
           :to="{ name: ROUTE_NAMES.NEW }"
         />
       </QFab>
@@ -481,6 +483,7 @@ import { ContractPod } from '@/features/pod-sync'
 import { formatToCalendarDate } from '@/features/contract-calendar'
 import type { DIDTable } from '@/shared/model/persistence'
 import { useAppMeta } from '@/app/useAppMeta'
+import { useModal } from '@/shared/lib/useModal'
 
 const LocaleComponent = defineAsyncComponent(
   () => import('./LocaleComponent.vue'),
@@ -511,6 +514,7 @@ const WalletProfile = defineAsyncComponent(() =>
 )
 
 const $q = useQuasar()
+const modal = useModal()
 useAppMeta()
 const router = useRouter()
 const i18n = useI18n()
@@ -657,21 +661,27 @@ async function onCalendarByDate(strDate: string) {
   $q.loading.hide()
 }
 
-function syncPods() {
-  const dialog = $q.dialog({
+async function syncPods() {
+  if (!(await modal.confirm($t('database.pod.sync')))) {
+    return
+  }
+  const progress = $q.dialog({
     message: $t('database.pod.sync'),
-    cancel: true,
+    progress: true,
     persistent: true,
+    ok: false,
   })
-  dialog.onOk(async () => {
+  try {
     const links = await podStore.getContractsLink()
     for (const link of links) {
       const message = 'refreshing ' + link
+      progress.update({ message })
       const newDogovor = await ContractPod.fromSolidUrl(link)
-      dialog.update({ message: message })
       console.log('WIP sync pod contract', newDogovor.presentation)
     }
-  })
+  } finally {
+    progress.hide()
+  }
 }
 
 onBeforeMount(() => {
