@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import useSecretaryStore from '@/entities/secretary-auth'
 import useGeoStore from '@/shared/model/geo'
+import { queryClient } from '@/shared/api/queryClient'
+import { queryKeys } from '@/shared/api/queryKeys'
 import { isChatGPT } from '@/shared/lib/detector'
 import {
   getHostBridge,
@@ -231,6 +233,10 @@ export default defineStore('event', {
         const text = await response.text()
         throw new Error(text)
       }
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.calendar.all,
+        refetchType: 'all',
+      })
       console.log('Данные успешно добавлены')
     },
     async editEvent(body: Record<string, unknown>) {

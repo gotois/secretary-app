@@ -495,11 +495,10 @@ const DatabaseComponent = defineAsyncComponent(
   () => import('./DatabaseComponent.vue'),
 )
 const PodImporter = defineAsyncComponent(() => import('@/features/pod-sync'))
-// FIXME: Return named components directly; plain { default: component } wrappers render empty UI.
 const ArchiveSearchComponent = defineAsyncComponent(() =>
-  import('@/features/archive-search').then(({ ArchiveSearchComponent }) => ({
-    default: ArchiveSearchComponent,
-  })),
+  import('@/features/archive-search').then(
+    ({ ArchiveSearchComponent }) => ArchiveSearchComponent,
+  ),
 )
 const AndroidBarComponent = defineAsyncComponent(
   () => import('@/shared/ui/AndroidBarComponent.vue'),
@@ -508,9 +507,9 @@ const CalendarEventsComponent = defineAsyncComponent(
   () => import('@/features/contract-calendar'),
 )
 const WalletProfile = defineAsyncComponent(() =>
-  import('@/features/wallet-connect').then(({ WalletProfile }) => ({
-    default: WalletProfile,
-  })),
+  import('@/features/wallet-connect').then(
+    ({ WalletProfile }) => WalletProfile,
+  ),
 )
 
 const $q = useQuasar()
