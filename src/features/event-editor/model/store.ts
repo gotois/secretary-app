@@ -301,6 +301,10 @@ export default defineStore('event', {
       if (!response.ok) {
         throw new Error('Response failed')
       }
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.calendar.all,
+        refetchType: 'all',
+      })
       console.log('Данные успешно удалены')
     },
   },

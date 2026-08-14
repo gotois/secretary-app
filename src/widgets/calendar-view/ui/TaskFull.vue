@@ -53,6 +53,17 @@
           {{ $t('archiveList.shareFile') }}
         </QTooltip>
       </QBtn>
+      <QBtn
+        fab-mini
+        color="negative"
+        icon="delete"
+        class="absolute"
+        style="top: 0; left: 82px; transform: translateY(-50%)"
+        aria-label="Удалить событие"
+        @click="emit('remove')"
+      >
+        <QTooltip>Удалить событие</QTooltip>
+      </QBtn>
       <div class="flex content-center text-overline no-margin q-pt-sm">
         <QIcon
           style="align-self: center"
@@ -211,7 +222,7 @@ const podStore = usePodStore()
 const { isLoggedIn } = storeToRefs(authStore)
 // const { publicKey } = storeToRefs(walletStore)
 
-defineEmits(['remove', 'edit'])
+const emit = defineEmits(['remove', 'edit'])
 const props = defineProps({
   eventId: {
     type: String as PropType<string>,

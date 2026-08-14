@@ -45,6 +45,7 @@ export default {
       empty: 'No events',
       loadError: 'Unable to load calendar',
       retry: 'Retry',
+      removeSuccess: 'Event "{name}" successfully deleted.',
     },
     unknown: {
       seo: {

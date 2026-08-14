@@ -46,6 +46,7 @@ export default {
       empty: 'Нет событий',
       loadError: 'Не удалось загрузить календарь',
       retry: 'Повторить',
+      removeSuccess: 'Событие «{name}» успешно удалено.',
     },
     unknown: {
       seo: {

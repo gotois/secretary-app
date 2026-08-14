@@ -485,6 +485,9 @@ import type { DIDTable } from '@/shared/model/persistence'
 import { useAppMeta } from '@/app/useAppMeta'
 import { useModal } from '@/shared/lib/useModal'
 
+const QOtp = defineAsyncComponent(
+  () => import('quasar-app-extension-q-otp/src/component/QOtp.vue'),
+)
 const LocaleComponent = defineAsyncComponent(
   () => import('./LocaleComponent.vue'),
 )

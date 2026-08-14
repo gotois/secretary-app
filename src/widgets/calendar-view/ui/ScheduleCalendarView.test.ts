@@ -16,6 +16,13 @@ const quasarMock = vi.hoisted(() => ({
   },
 }))
 
+const icalendarPluginMocks = vi.hoisted(
+  (): Array<{
+    between: ReturnType<typeof vi.fn>
+    icalEventToSXEvent: (event: { uid: string }) => { id: string }
+  }> => [],
+)
+
 vi.mock('quasar', async (importOriginal) => {
   const original = await importOriginal<typeof import('quasar')>()
   return {
@@ -78,7 +85,14 @@ vi.mock('@schedule-x/calendar', () => ({
 }))
 
 vi.mock('@schedule-x/ical', () => ({
-  createIcalendarPlugin: vi.fn(() => ({ between: vi.fn() })),
+  createIcalendarPlugin: vi.fn(() => {
+    const plugin = {
+      between: vi.fn(),
+      icalEventToSXEvent: () => ({ id: 'schedule-x-id' }),
+    }
+    icalendarPluginMocks.push(plugin)
+    return plugin
+  }),
 }))
 
 vi.mock('@schedule-x/current-time', () => ({
@@ -154,6 +168,7 @@ function mountScheduleCalendar(): VueWrapper {
 afterEach(() => {
   wrappers.splice(0).forEach((wrapper) => wrapper.unmount())
   queryClients.splice(0).forEach((queryClient) => queryClient.clear())
+  icalendarPluginMocks.splice(0)
   vi.restoreAllMocks()
 })
 
@@ -176,6 +191,32 @@ describe('ScheduleCalendarView loading states', () => {
 
     await vi.waitFor(() => {
       expect(wrapper.find('[data-test="calendar-ready"]').exists()).toBe(true)
+    })
+  })
+
+  test('uses the iCalendar UID for actions on an event', async () => {
+    vi.spyOn(calendarApi, 'getSubscription').mockResolvedValue(
+      [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'BEGIN:VEVENT',
+        'UID:4ab25c3d-00cf-4c0a-8c72-4b59f2dd2007',
+        'DTSTART:20260102T090000Z',
+        'DTEND:20260102T100000Z',
+        'END:VEVENT',
+        'END:VCALENDAR',
+      ].join('\r\n'),
+    )
+
+    const wrapper = mountScheduleCalendar()
+
+    await vi.waitFor(() => {
+      expect(wrapper.find('[data-test="calendar-ready"]').exists()).toBe(true)
+    })
+
+    const plugin = icalendarPluginMocks.at(-1)
+    expect(plugin?.icalEventToSXEvent({ uid: 'task-uid' })).toEqual({
+      id: 'task-uid',
     })
   })
 

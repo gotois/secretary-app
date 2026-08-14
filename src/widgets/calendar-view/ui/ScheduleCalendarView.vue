@@ -22,12 +22,13 @@
       >
         <ScheduleXCalendar
           v-if="calendarApp && !calendarLoadError"
+          :key="calendarRevision"
           :calendar-app="calendarApp"
         >
           <template #dateGridEvent="{ calendarEvent }">
             <CalendarEventCard
               class="fit"
-              :event-id="String(calendarEvent.id)"
+              :event-id="getTaskUid(calendarEvent)"
               :title="calendarEvent.title"
               :description="calendarEvent.description"
               :start="asZonedDateTime(calendarEvent.start)"
@@ -38,14 +39,14 @@
               :organizer="calendarEvent.organizer"
               :participant="calendarEvent.participant"
               :link="calendarEvent.link"
-              @remove="onRemove"
+              @remove="onRemove(calendarEvent.title)"
             />
           </template>
           <template #timeGridEvent="{ calendarEvent }">
             <CalendarEventCard
               class="fit"
               horizontal
-              :event-id="String(calendarEvent.id)"
+              :event-id="getTaskUid(calendarEvent)"
               :title="calendarEvent.title"
               :description="calendarEvent.description"
               :start="asZonedDateTime(calendarEvent.start)"
@@ -56,7 +57,7 @@
               :organizer="calendarEvent.organizer"
               :participant="calendarEvent.participant"
               :link="calendarEvent.link"
-              @remove="onRemove"
+              @remove="onRemove(calendarEvent.title)"
             />
           </template>
           <template #headerContent>
@@ -197,6 +198,7 @@ const i18n = useI18n()
 const langStore = useLangStore()
 const geoStore = useGeoStore()
 const calendarApp = shallowRef<CalendarApp>(null)
+const calendarRevision = ref(0)
 const calendarLoadError = shallowRef<unknown>(null)
 const calendarControls = createCalendarControlsPlugin()
 
@@ -204,6 +206,71 @@ function asZonedDateTime(
   value: Temporal.PlainDate | Temporal.ZonedDateTime,
 ): Temporal.ZonedDateTime {
   return value as Temporal.ZonedDateTime
+}
+
+type IcalendarEvent = {
+  uid: string
+}
+
+type IcalendarOccurrence = {
+  item: IcalendarEvent
+}
+
+type CalendarEventWithTaskUid = {
+  id: string | number
+  taskUid?: string
+}
+
+type InternalCalendarEvent = CalendarEventWithTaskUid & {
+  _foreignProperties?: Record<string, unknown>
+}
+
+type IcalendarPluginWithTaskUid = {
+  icalEventToSXEvent?: (event: IcalendarEvent) => InternalCalendarEvent
+  icalOccurrenceToSXEvent?: (
+    occurrence: IcalendarOccurrence,
+  ) => InternalCalendarEvent
+}
+
+function setTaskUid(calendarEvent: InternalCalendarEvent, taskUid: string) {
+  calendarEvent._foreignProperties = {
+    ...calendarEvent._foreignProperties,
+    taskUid,
+  }
+}
+
+function addTaskUidToIcalendarEvents(
+  icalendarPlugin: ReturnType<typeof createIcalendarPlugin>,
+): void {
+  const plugin = icalendarPlugin as unknown as IcalendarPluginWithTaskUid
+  const convertEvent = plugin.icalEventToSXEvent
+  if (!convertEvent) {
+    return
+  }
+
+  plugin.icalEventToSXEvent = (event) => {
+    const calendarEvent = convertEvent.call(plugin, event)
+    setTaskUid(calendarEvent, event.uid)
+
+    return calendarEvent
+  }
+
+  const convertOccurrence = plugin.icalOccurrenceToSXEvent
+  if (convertOccurrence) {
+    plugin.icalOccurrenceToSXEvent = (occurrence) => {
+      const calendarEvent = convertOccurrence.call(plugin, occurrence)
+      setTaskUid(calendarEvent, occurrence.item.uid)
+
+      return calendarEvent
+    }
+  }
+}
+
+function getTaskUid(calendarEvent: CalendarEventWithTaskUid): string {
+  if (!calendarEvent.taskUid) {
+    throw new Error('Calendar task UID is missing')
+  }
+  return calendarEvent.taskUid
 }
 
 const $t = i18n.t
@@ -244,6 +311,7 @@ function applyCalendarSubscription(ics: string) {
     )
     if (getCalendarSubscriptionStatus(ics) === 'ready') {
       calendarApp.value = createCalendarView(ics, backgroundEvents)
+      calendarRevision.value += 1
     }
   } catch (error) {
     setCalendarError(error)
@@ -298,6 +366,7 @@ function createCalendarView(
   const icalendarPlugin = createIcalendarPlugin({
     data: ics,
   })
+  addTaskUidToIcalendarEvents(icalendarPlugin)
   const eventsServicePlugin = createEventsServicePlugin()
   const initialScroll = TemporalPolyfill.Now.plainTimeISO().toString({
     smallestUnit: 'minute',
@@ -411,12 +480,12 @@ function selectDay(item: Date) {
   */
 }
 
-function onRemove() {
+function onRemove(name: string) {
   scrollAreaRef.value.setScrollPosition('vertical', 0, 150)
   $q.notify({
     type: 'positive',
-    message: $t('contract.removeDialog.success', {
-      name: 'item.instrument.name',
+    message: $t('pages.calendar.removeSuccess', {
+      name,
     }),
   })
 }

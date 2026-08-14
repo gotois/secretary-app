@@ -49,7 +49,7 @@
     <QPopupProxy>
       <TaskFull
         :style="{
-          width: $q.platform.is.desktop ? '640px' : '320px'
+          width: $q.platform.is.desktop ? '640px' : '320px',
         }"
         :event-id="eventId"
         :title="title"
@@ -72,12 +72,10 @@
 <script lang="ts" setup>
 import { PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { storeToRefs } from 'pinia'
 import { QCard, QCardSection, QPopupProxy, date, useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import TaskFull from './TaskFull.vue'
-import useContractStore from '@/entities/contract'
-import useAuthStore from '@/entities/oidc-session'
+import { useEventStore } from '@/features/event-editor'
 import type { Agent } from '@/shared/model/contact'
 import type { FormatImageType } from '@/shared/model/media'
 import { convertTemporalToDate } from '@/shared/lib/dateHelper'
@@ -85,11 +83,8 @@ import { ROUTE_NAMES } from '@/shared/config/routes'
 
 const $q = useQuasar()
 const i18n = useI18n()
-const contractStore = useContractStore()
-const authStore = useAuthStore()
 const router = useRouter()
-
-const { isLoggedIn } = storeToRefs(authStore)
+const eventStore = useEventStore()
 
 const $t = i18n.t
 
@@ -155,9 +150,7 @@ function onEdit() {
 
 function onRemove() {
   $q.notify({
-    message: !isLoggedIn.value
-      ? $t('contract.removeDialog.message')
-      : $t('contract.removeDialog.isLoginMessage'),
+    message: $t('contract.removeDialog.message'),
     type: 'negative',
     position: 'center',
     group: false,
@@ -174,7 +167,7 @@ function onRemove() {
         color: 'white',
         async handler() {
           try {
-            await contractStore.removeContract(props.eventId, isLoggedIn.value)
+            await eventStore.deleteEvent({ uid_tasks: [props.eventId] })
             emit('remove')
           } catch (error) {
             console.error(error)
