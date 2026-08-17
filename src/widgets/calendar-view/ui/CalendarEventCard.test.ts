@@ -14,7 +14,11 @@ vi.mock('quasar', async (importOriginal) => {
   const original = await importOriginal<typeof import('quasar')>()
   return {
     ...original,
-    useQuasar: () => ({ notify, dark: { isActive: false } }),
+    useQuasar: () => ({
+      notify,
+      dark: { isActive: false },
+      platform: { is: { desktop: false } },
+    }),
   }
 })
 vi.mock('@/features/event-editor', () => ({
@@ -31,23 +35,26 @@ import CalendarEventCard from './CalendarEventCard.vue'
 
 describe('CalendarEventCard', () => {
   test('resolves the calendar UID before deleting the event', async () => {
-    eventStoreMock.getEvent.mockResolvedValue({ id_task: 42 })
     const wrapper = shallowMount(CalendarEventCard, {
       props: {
         eventId: '4ab25c3d-00cf-4c0a-8c72-4b59f2dd2007',
         title: 'Встреча',
         start: Temporal.ZonedDateTime.from(
           '2026-08-14T09:00:00+03:00[Europe/Moscow]',
-        ),
+        ) as unknown as globalThis.Temporal.ZonedDateTime,
         end: Temporal.ZonedDateTime.from(
           '2026-08-14T10:00:00+03:00[Europe/Moscow]',
-        ),
+        ) as unknown as globalThis.Temporal.ZonedDateTime,
       },
       global: {
         stubs: {
           QCard: { template: '<section><slot /></section>' },
           QCardSection: { template: '<section><slot /></section>' },
           QPopupProxy: { template: '<section><slot /></section>' },
+          TaskFull: {
+            emits: ['remove'],
+            template: '<button @click="$emit(\'remove\')">Удалить</button>',
+          },
         },
       },
     })
@@ -55,9 +62,8 @@ describe('CalendarEventCard', () => {
     await wrapper.get('button').trigger('click')
     await notify.mock.calls[0]?.[0].actions[0].handler()
 
-    expect(eventStoreMock.getEvent).toHaveBeenCalledWith(
-      '4ab25c3d-00cf-4c0a-8c72-4b59f2dd2007',
-    )
-    expect(eventStoreMock.deleteEvent).toHaveBeenCalledWith({ id_tasks: [42] })
+    expect(eventStoreMock.deleteEvent).toHaveBeenCalledWith({
+      uid_tasks: ['4ab25c3d-00cf-4c0a-8c72-4b59f2dd2007'],
+    })
   })
 })

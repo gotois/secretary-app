@@ -19,7 +19,10 @@ const quasarMock = vi.hoisted(() => ({
 const icalendarPluginMocks = vi.hoisted(
   (): Array<{
     between: ReturnType<typeof vi.fn>
-    icalEventToSXEvent: (event: { uid: string }) => { id: string }
+    icalEventToSXEvent: (event: { uid: string }) => {
+      id: string
+      _foreignProperties?: Record<string, unknown>
+    }
   }> => [],
 )
 
@@ -216,7 +219,8 @@ describe('ScheduleCalendarView loading states', () => {
 
     const plugin = icalendarPluginMocks.at(-1)
     expect(plugin?.icalEventToSXEvent({ uid: 'task-uid' })).toEqual({
-      id: 'task-uid',
+      id: 'schedule-x-id',
+      _foreignProperties: { taskUid: 'task-uid' },
     })
   })
 
