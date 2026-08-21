@@ -3,12 +3,12 @@ import useSecretaryStore from '@/entities/secretary-auth'
 import useGeoStore from '@/shared/model/geo'
 import { queryClient } from '@/shared/api/queryClient'
 import { queryKeys } from '@/shared/api/queryKeys'
-import { isChatGPT } from '@/shared/lib/detector'
+import { isMcpApp } from '@/shared/lib/detector'
 import {
   getHostBridge,
-  type ChatGPTStructuredContent,
-  type ChatGPTTask,
-} from '@/shared/lib/hostBridge'
+  type McpStructuredContent,
+  type McpTask,
+} from '@/shared/lib/mcp/hostBridge'
 
 interface TelegramGroup {
   id: number
@@ -17,11 +17,11 @@ interface TelegramGroup {
 }
 
 interface EventStoreState {
-  chatGPTTasks: ChatGPTTask[]
-  chatGPTSelectedDate: string
-  chatGPTTimezone: string
-  chatGPTStale: boolean
-  chatGPTError: string | null
+  mcpTasks: McpTask[]
+  mcpSelectedDate: string
+  mcpTimezone: string
+  mcpStale: boolean
+  mcpError: string | null
 }
 
 function localDateInTimeZone(timeZone: string): string {
@@ -45,10 +45,10 @@ function normalizeToolParams(
   return JSON.parse(JSON.stringify(params)) as Record<string, unknown>
 }
 
-function getChatGPTContent(
+function getMcpContent(
   bridge: ReturnType<typeof getHostBridge>,
-  content?: ChatGPTStructuredContent,
-): ChatGPTStructuredContent | undefined {
+  content?: McpStructuredContent,
+): McpStructuredContent | undefined {
   return content || bridge.widgetState?.content || bridge.toolOutput
 }
 
@@ -57,65 +57,65 @@ export default defineStore('event', {
     const bridge = getHostBridge()
     const timezone = bridge.timezone || 'Europe/Moscow'
     return {
-      chatGPTTasks: [],
-      chatGPTSelectedDate: localDateInTimeZone(timezone),
-      chatGPTTimezone: timezone,
-      chatGPTStale: false,
-      chatGPTError: null,
+      mcpTasks: [],
+      mcpSelectedDate: localDateInTimeZone(timezone),
+      mcpTimezone: timezone,
+      mcpStale: false,
+      mcpError: null,
     }
   },
   actions: {
-    applyChatGPTContent(content?: ChatGPTStructuredContent): boolean {
+    applyMcpContent(content?: McpStructuredContent): boolean {
       const bridge = getHostBridge()
-      const value = getChatGPTContent(bridge, content)
+      const value = getMcpContent(bridge, content)
       if (!value) {
         return false
       }
       if (Array.isArray(value.tasks)) {
-        this.chatGPTTasks = value.tasks.map((task) => ({
+        this.mcpTasks = value.tasks.map((task) => ({
           ...task,
           targetType: task.targetType || 'Person',
         }))
       }
       if (value.selectedDate) {
-        this.chatGPTSelectedDate = value.selectedDate.slice(0, 10)
+        this.mcpSelectedDate = value.selectedDate.slice(0, 10)
       }
       if (value.timezone) {
-        this.chatGPTTimezone = value.timezone
+        this.mcpTimezone = value.timezone
         useGeoStore().timeZone = value.timezone
       }
-      this.chatGPTStale = false
-      this.chatGPTError = null
+      this.mcpStale = false
+      this.mcpError = null
       bridge.setWidgetState({
         ...bridge.widgetState,
         content: {
           ...value,
-          tasks: this.chatGPTTasks,
-          selectedDate: this.chatGPTSelectedDate,
-          timezone: this.chatGPTTimezone,
+          tasks: this.mcpTasks,
+          selectedDate: this.mcpSelectedDate,
+          timezone: this.mcpTimezone,
         },
       })
       return true
     },
-    async showChatGPTEvents(date?: string) {
-      date ||= this.chatGPTSelectedDate
+    async loadMcpCalendarTasks(date?: string) {
+      date ||= this.mcpSelectedDate
       const bridge = getHostBridge()
-      const result = await bridge.callTool('show', {
+      const result = await bridge.callTool('list-calendar-tasks', {
         start_date: `${date}T00:00:00`,
         end_date: `${date}T23:59:59`,
       })
-      if (!this.applyChatGPTContent(result.structuredContent)) {
-        throw new Error('Show returned no structured task data')
+      if (!this.applyMcpContent(result.structuredContent)) {
+        throw new Error('list-calendar-tasks returned no structured task data')
       }
-      return this.chatGPTTasks
+      return this.mcpTasks
     },
-    async refreshChatGPTAfterWrite(): Promise<void> {
+    async refreshMcpAfterWrite(): Promise<void> {
       try {
-        await this.showChatGPTEvents()
+        await this.loadMcpCalendarTasks()
       } catch (error) {
         console.error(error)
-        this.chatGPTStale = true
-        this.chatGPTError =
+        this.mcpStale = true
+        this.mcpError =
           error instanceof Error ? error.message : 'Не удалось обновить список'
       }
     },
@@ -147,16 +147,12 @@ export default defineStore('event', {
       return groups as TelegramGroup[]
     },
     async getEvent(taskId: number | string) {
-      if (isChatGPT.value) {
-        this.applyChatGPTContent()
-        let task = this.chatGPTTasks.find(
-          (item) => item.id_task === Number(taskId),
-        )
+      if (isMcpApp.value) {
+        this.applyMcpContent()
+        let task = this.mcpTasks.find((item) => item.id_task === Number(taskId))
         if (!task) {
-          await this.showChatGPTEvents()
-          task = this.chatGPTTasks.find(
-            (item) => item.id_task === Number(taskId),
-          )
+          await this.loadMcpCalendarTasks()
+          task = this.mcpTasks.find((item) => item.id_task === Number(taskId))
         }
         if (!task) {
           throw new Error('Task not found')
@@ -191,7 +187,7 @@ export default defineStore('event', {
     // TODO: описать входную модель события и убрать `any`: деструктуризация ниже не
     // валидирует payload, поэтому UI может отправить в API произвольные поля.
     async createEvent(body: Record<string, unknown>) {
-      if (isChatGPT.value) {
+      if (isMcpApp.value) {
         const bridge = getHostBridge()
         const task = { ...body }
         delete task.target
@@ -201,10 +197,10 @@ export default defineStore('event', {
           'create',
           normalizeToolParams(task),
         )
-        if (!this.applyChatGPTContent(result.structuredContent)) {
+        if (!this.applyMcpContent(result.structuredContent)) {
           throw new Error('Create returned no structured task data')
         }
-        return this.chatGPTTasks[0]
+        return this.mcpTasks[0]
       }
 
       const { ...event } = body
@@ -240,13 +236,13 @@ export default defineStore('event', {
       console.log('Данные успешно добавлены')
     },
     async editEvent(body: Record<string, unknown>) {
-      if (isChatGPT.value) {
+      if (isMcpApp.value) {
         const bridge = getHostBridge()
         const task = { ...body }
         delete task.target
         delete task.remind_before
         await bridge.callTool('edit', normalizeToolParams(task))
-        await this.refreshChatGPTAfterWrite()
+        await this.refreshMcpAfterWrite()
         return
       }
 
@@ -274,13 +270,13 @@ export default defineStore('event', {
       console.log('Данные успешно изменены')
     },
     async deleteEvent(body: unknown) {
-      if (isChatGPT.value) {
+      if (isMcpApp.value) {
         const bridge = getHostBridge()
         await bridge.callTool(
           'remove',
           normalizeToolParams(body as Record<string, unknown>),
         )
-        await this.refreshChatGPTAfterWrite()
+        await this.refreshMcpAfterWrite()
         return
       }
 

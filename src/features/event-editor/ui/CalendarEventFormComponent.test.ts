@@ -23,7 +23,7 @@ vi.mock('vue-i18n', () => ({
 vi.mock('@/shared/lib/detector', async () => {
   const { computed } = await import('vue')
   return {
-    isChatGPT: computed(() => false),
+    isMcpApp: computed(() => false),
     isTMA: computed(() => false),
   }
 })

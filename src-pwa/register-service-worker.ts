@@ -1,13 +1,13 @@
 import { Notify, LocalStorage } from 'quasar'
 import { register } from 'register-service-worker'
-import { isChatGPTHost } from '../src/shared/lib/chatgptHost'
+import { isMcpAppHost } from '../src/shared/lib/mcp/appHost'
 import pkg from '../package.json'
 
 const { version } = pkg
 
 // ServiceWorkerRegistration: https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration
 
-if (!isChatGPTHost(document)) {
+if (!isMcpAppHost(document)) {
   register(import.meta.env.QUASAR_SERVICE_WORKER_FILE, {
     // The registrationOptions object will be passed as the second argument
     // to ServiceWorkerContainer.register()

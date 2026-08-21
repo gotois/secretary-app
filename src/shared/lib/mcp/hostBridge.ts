@@ -4,10 +4,19 @@ import type {
   McpUiToolResultNotification,
 } from '@modelcontextprotocol/ext-apps'
 import { inject, type InjectionKey } from 'vue'
+import {
+  getMcpHostCapabilities,
+  getOpenAiToolInput,
+  getOpenAiWidgetState,
+  requestOpenAiModal,
+  setOpenAiWidgetState,
+  subscribeOpenAiGlobals,
+  type McpHostCapabilities,
+} from '@/shared/lib/openai/extensions'
 
-export const CHATGPT_WIDGET_STATE_KEY = 'secretaryCalendar'
+export const MCP_WIDGET_STATE_KEY = 'secretaryCalendar'
 
-export interface ChatGPTTask {
+export interface McpTask {
   id_task: number
   name: string
   description?: string | null
@@ -39,70 +48,62 @@ export interface ChatGPTTask {
   targetType?: 'Group' | 'Person'
 }
 
-export interface ChatGPTStructuredContent {
+export interface McpStructuredContent {
   view: 'calendar' | 'create-form'
-  tasks?: ChatGPTTask[]
+  tasks?: McpTask[]
   selectedDate?: string
   timezone?: string
 }
 
-export interface ChatGPTTaskModalState {
+export interface McpTaskModalState {
   mode: 'view' | 'edit' | 'create'
   taskId?: number
 }
 
-export interface ChatGPTMessageModalState {
+export interface McpMessageModalState {
   mode: 'alert' | 'confirm'
   message: string
   requestId: string
 }
 
-export type ChatGPTModalState = ChatGPTTaskModalState | ChatGPTMessageModalState
+export type McpModalState = McpTaskModalState | McpMessageModalState
 
-export interface ChatGPTWidgetState {
-  content?: ChatGPTStructuredContent
+export interface McpWidgetState {
+  content?: McpStructuredContent
 }
 
-export interface ChatGPTToolResult {
-  structuredContent?: ChatGPTStructuredContent
+export interface McpToolResult {
+  structuredContent?: McpStructuredContent
   content?: Array<{ type: string; text?: string }>
   isError?: boolean
 }
 
-export interface OpenAIGlobals {
-  toolInput?: Record<string, unknown>
-  widgetState?: Record<string, unknown>
-  requestModal?: (options?: {
-    params?: Record<string, unknown>
-    template?: string
-  }) => Promise<unknown>
-  setWidgetState?: (state: Record<string, unknown>) => void
-}
-
 export interface HostBridge {
   readonly isAvailable: boolean
+  readonly capabilities: McpHostCapabilities
   readonly theme?: 'light' | 'dark'
   readonly locale?: string
   readonly timezone?: string
   readonly toolInput?: Record<string, unknown>
-  readonly toolOutput?: ChatGPTStructuredContent
-  readonly widgetState?: ChatGPTWidgetState
-  callTool(
-    name: string,
-    args: Record<string, unknown>,
-  ): Promise<ChatGPTToolResult>
-  requestModal(params: ChatGPTModalState): Promise<boolean>
+  readonly toolOutput?: McpStructuredContent
+  readonly widgetState?: McpWidgetState
+  callTool(name: string, args: Record<string, unknown>): Promise<McpToolResult>
+  requestModal(params: McpModalState): Promise<boolean>
   requestClose(): Promise<void>
-  setWidgetState(state: ChatGPTWidgetState): void
+  setWidgetState(state: McpWidgetState): void
   subscribe(callback: () => void): () => void
   dispose(): void
 }
 
 class PassiveHostBridge implements HostBridge {
   readonly isAvailable = false
+  readonly capabilities: McpHostCapabilities = {
+    nativeModal: false,
+    persistentWidgetState: false,
+  }
 
-  async callTool(): Promise<ChatGPTToolResult> {
-    throw new Error('ChatGPT tools are unavailable')
+  async callTool(): Promise<McpToolResult> {
+    throw new Error('Mcp tools are unavailable')
   }
 
   async requestModal(): Promise<boolean> {
@@ -125,7 +126,7 @@ type ToolResult = McpUiToolResultNotification['params']
 
 function isModalInput(
   input?: Record<string, unknown>,
-): input is Record<string, unknown> & ChatGPTModalState {
+): input is Record<string, unknown> & McpModalState {
   if (input?.mode === 'alert' || input?.mode === 'confirm') {
     return (
       typeof input.message === 'string' && typeof input.requestId === 'string'
@@ -136,9 +137,9 @@ function isModalInput(
   )
 }
 
-export function isChatGPTMessageModalState(
+export function isMcpMessageModalState(
   input?: Record<string, unknown>,
-): input is Record<string, unknown> & ChatGPTMessageModalState {
+): input is Record<string, unknown> & McpMessageModalState {
   return (
     (input?.mode === 'alert' || input?.mode === 'confirm') &&
     typeof input.message === 'string' &&
@@ -146,17 +147,17 @@ export function isChatGPTMessageModalState(
   )
 }
 
-export function isChatGPTTaskModalState(
+export function isMcpTaskModalState(
   input?: Record<string, unknown>,
-): input is Record<string, unknown> & ChatGPTTaskModalState {
+): input is Record<string, unknown> & McpTaskModalState {
   return (
     input?.mode === 'create' || input?.mode === 'view' || input?.mode === 'edit'
   )
 }
 
-function isChatGPTStructuredContent(
+function isMcpStructuredContent(
   content: unknown,
-): content is ChatGPTStructuredContent {
+): content is McpStructuredContent {
   if (!content || typeof content !== 'object') {
     return false
   }
@@ -170,9 +171,9 @@ function isChatGPTStructuredContent(
   )
 }
 
-function normalizeToolResult(result: ToolResult): ChatGPTToolResult {
+function normalizeToolResult(result: ToolResult): McpToolResult {
   return {
-    structuredContent: isChatGPTStructuredContent(result.structuredContent)
+    structuredContent: isMcpStructuredContent(result.structuredContent)
       ? result.structuredContent
       : undefined,
     content: result.content?.map((item) =>
@@ -186,12 +187,13 @@ function normalizeToolResult(result: ToolResult): ChatGPTToolResult {
 
 class McpAppHostBridge implements HostBridge {
   readonly isAvailable = true
+  readonly capabilities = getMcpHostCapabilities()
   private input?: ToolInput
-  private output?: ChatGPTStructuredContent
+  private output?: McpStructuredContent
   private readonly subscribers = new Set<() => void>()
 
   constructor(private readonly mcpApp: App) {
-    const modalInput = window.openai?.toolInput
+    const modalInput = getOpenAiToolInput()
     if (isModalInput(modalInput)) {
       this.input = modalInput
     }
@@ -206,9 +208,7 @@ class McpAppHostBridge implements HostBridge {
     this.mcpApp.addEventListener('hostcontextchanged', () => {
       this.notifySubscribers()
     })
-    window.addEventListener('openai:set_globals', this.onOpenAIGlobals, {
-      passive: true,
-    })
+    this.unsubscribeOpenAiGlobals = subscribeOpenAiGlobals(this.onOpenAiGlobals)
   }
 
   get theme(): 'light' | 'dark' | undefined {
@@ -227,21 +227,18 @@ class McpAppHostBridge implements HostBridge {
     return this.input
   }
 
-  get toolOutput(): ChatGPTStructuredContent | undefined {
+  get toolOutput(): McpStructuredContent | undefined {
     return this.output
   }
 
-  get widgetState(): ChatGPTWidgetState | undefined {
-    const state = window.openai?.widgetState?.[CHATGPT_WIDGET_STATE_KEY]
-    return state && typeof state === 'object'
-      ? (state as ChatGPTWidgetState)
-      : undefined
+  get widgetState(): McpWidgetState | undefined {
+    return getOpenAiWidgetState(MCP_WIDGET_STATE_KEY)
   }
 
   async callTool(
     name: string,
     args: Record<string, unknown>,
-  ): Promise<ChatGPTToolResult> {
+  ): Promise<McpToolResult> {
     const result = normalizeToolResult(
       await this.mcpApp.callServerTool({
         name,
@@ -258,25 +255,16 @@ class McpAppHostBridge implements HostBridge {
     return result
   }
 
-  async requestModal(params: ChatGPTModalState): Promise<boolean> {
-    if (!window.openai?.requestModal) {
-      return false
-    }
-    await window.openai.requestModal({
-      params: params as unknown as Record<string, unknown>,
-    })
-    return true
+  async requestModal(params: McpModalState): Promise<boolean> {
+    return requestOpenAiModal(params)
   }
 
   async requestClose(): Promise<void> {
     await this.mcpApp.requestTeardown()
   }
 
-  setWidgetState(state: ChatGPTWidgetState): void {
-    window.openai?.setWidgetState?.({
-      ...window.openai.widgetState,
-      [CHATGPT_WIDGET_STATE_KEY]: state,
-    })
+  setWidgetState(state: McpWidgetState): void {
+    setOpenAiWidgetState(MCP_WIDGET_STATE_KEY, state)
   }
 
   subscribe(callback: () => void): () => void {
@@ -285,14 +273,14 @@ class McpAppHostBridge implements HostBridge {
   }
 
   dispose(): void {
-    window.removeEventListener('openai:set_globals', this.onOpenAIGlobals)
+    this.unsubscribeOpenAiGlobals()
     this.subscribers.clear()
   }
 
-  private readonly onOpenAIGlobals = (
-    event: WindowEventMap['openai:set_globals'],
-  ): void => {
-    const input = event.detail.globals.toolInput
+  private unsubscribeOpenAiGlobals = () => {}
+
+  private readonly onOpenAiGlobals = (): void => {
+    const input = getOpenAiToolInput()
     if (isModalInput(input)) {
       this.input = input
     }
@@ -323,16 +311,4 @@ export function getHostBridge(): HostBridge {
 
 export function useHostBridge(): HostBridge {
   return inject(HOST_BRIDGE_KEY, hostBridge)
-}
-
-declare global {
-  interface Window {
-    openai?: OpenAIGlobals
-  }
-
-  interface WindowEventMap {
-    'openai:set_globals': CustomEvent<{
-      globals: Partial<OpenAIGlobals>
-    }>
-  }
 }

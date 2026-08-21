@@ -1,23 +1,21 @@
 <template>
   <main
     v-if="!bridge.isAvailable"
-    class="chatgpt-unavailable column flex-center q-pa-lg text-center"
+    class="mcp-app-unavailable column flex-center q-pa-lg text-center"
   >
     <QIcon
       name="error_outline"
       color="negative"
       size="48px"
     />
-    <h1 class="text-h6 q-mb-sm"> Среда ChatGPT недоступна </h1>
-    <p class="text-body2 text-grey-7">
-      Откройте приложение повторно из ChatGPT.
-    </p>
+    <h1 class="text-h6 q-mb-sm"> Среда Mcp недоступна </h1>
+    <p class="text-body2 text-grey-7"> Откройте приложение повторно из Mcp. </p>
   </main>
   <section
     v-else-if="messageModal"
-    class="chatgpt-message-modal column q-pa-lg"
+    class="mcp-app-message-modal column q-pa-lg"
   >
-    <p class="text-body1 q-mb-lg chatgpt-message-modal__text">
+    <p class="text-body1 q-mb-lg mcp-app-message-modal__text">
       {{ messageModal.message }}
     </p>
     <div class="row justify-end q-gutter-sm">
@@ -36,7 +34,7 @@
   </section>
   <section
     v-else
-    class="chatgpt-calendar q-pa-md"
+    class="mcp-app-calendar q-pa-md"
   >
     <template v-if="createDraft">
       <div class="text-h6 q-mb-xs">Проверьте задачу</div>
@@ -104,13 +102,13 @@
             {{ formattedDate }}
           </div>
           <div class="text-caption text-grey-7">
-            {{ eventStore.chatGPTTimezone }}
+            {{ eventStore.mcpTimezone }}
           </div>
         </div>
       </div>
 
       <QBanner
-        v-if="eventStore.chatGPTStale"
+        v-if="eventStore.mcpStale"
         class="bg-warning text-dark q-mb-md"
         rounded
       >
@@ -168,7 +166,7 @@
       </QBanner>
 
       <div
-        v-else-if="!eventStore.chatGPTTasks.length"
+        v-else-if="!eventStore.mcpTasks.length"
         class="column items-center q-pa-xl text-grey-7"
       >
         <QIcon
@@ -185,7 +183,7 @@
         class="rounded-borders"
       >
         <QItem
-          v-for="task in eventStore.chatGPTTasks"
+          v-for="task in eventStore.mcpTasks"
           :key="task.id_task"
           clickable
           @click="openTask('view', task)"
@@ -236,7 +234,7 @@
       square
       @hide="fallbackTask = null"
     >
-      <QCard class="chatgpt-fallback-card">
+      <QCard class="mcp-app-fallback-card">
         <QCardSection class="row items-center">
           <div class="text-h6">
             {{ fallbackTitle }}
@@ -294,14 +292,14 @@ import {
 } from 'quasar'
 import { useEventStore } from '@/features/event-editor'
 import {
-  isChatGPTMessageModalState,
+  isMcpMessageModalState,
   useHostBridge,
-  type ChatGPTTaskModalState,
-  type ChatGPTTask,
-} from '@/shared/lib/hostBridge'
+  type McpTaskModalState,
+  type McpTask,
+} from '@/shared/lib/mcp/hostBridge'
 import {
-  getChatGPTModalChannelName,
-  type ChatGPTModalResult,
+  getMcpModalChannelName,
+  type McpModalResult,
   useModal,
 } from '@/shared/lib/useModal'
 
@@ -315,38 +313,38 @@ const bridge = useHostBridge()
 const modal = useModal()
 const eventStore = useEventStore()
 const messageModal = computed(() =>
-  isChatGPTMessageModalState(bridge.toolInput) ? bridge.toolInput : null,
+  isMcpMessageModalState(bridge.toolInput) ? bridge.toolInput : null,
 )
 const initialContent = bridge.toolOutput || bridge.widgetState?.content
 const loading = ref(false)
 const loadError = ref<string | null>(null)
 const modalError = ref<string | null>(null)
-const pendingFallback = ref<ChatGPTTaskModalState | null>(null)
+const pendingFallback = ref<McpTaskModalState | null>(null)
 const fallbackOpen = ref(false)
-const fallbackMode = ref<ChatGPTTaskModalState['mode']>('view')
-const fallbackTask = ref<ChatGPTTask | null>(null)
+const fallbackMode = ref<McpTaskModalState['mode']>('view')
+const fallbackTask = ref<McpTask | null>(null)
 const writingTaskId = ref<number | null>(null)
-const createDraft = ref<ChatGPTTask | null>(
+const createDraft = ref<McpTask | null>(
   initialContent?.view === 'create-form'
     ? initialContent.tasks?.[0] || null
     : null,
 )
-const createdTask = ref<ChatGPTTask | null>(null)
+const createdTask = ref<McpTask | null>(null)
 let unsubscribe = () => {}
 let messageModalSettled = false
 
 const writing = computed(() => writingTaskId.value !== null)
 const selectedDate = computed({
-  get: () => eventStore.chatGPTSelectedDate,
+  get: () => eventStore.mcpSelectedDate,
   set: (value: string) => {
-    eventStore.chatGPTSelectedDate = value
+    eventStore.mcpSelectedDate = value
   },
 })
 const locale = computed(() => bridge.locale || 'ru-RU')
 const formattedDate = computed(() => {
   const date = new Date(`${selectedDate.value}T12:00:00`)
   return new Intl.DateTimeFormat(locale.value, {
-    timeZone: eventStore.chatGPTTimezone,
+    timeZone: eventStore.mcpTimezone,
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -362,9 +360,9 @@ const fallbackTitle = computed(() => {
   return 'Задача'
 })
 
-function taskTime(task: ChatGPTTask): string {
+function taskTime(task: McpTask): string {
   const format = new Intl.DateTimeFormat(locale.value, {
-    timeZone: eventStore.chatGPTTimezone,
+    timeZone: eventStore.mcpTimezone,
     hour: '2-digit',
     minute: '2-digit',
   })
@@ -375,15 +373,15 @@ function taskTime(task: ChatGPTTask): string {
   return `${start}–${format.format(new Date(task.end_date))}`
 }
 
-function emptyTask(): ChatGPTTask {
+function emptyTask(): McpTask {
   const now = new Date()
   const isToday =
-    eventStore.chatGPTSelectedDate ===
+    eventStore.mcpSelectedDate ===
     new Intl.DateTimeFormat('en-CA', {
-      timeZone: eventStore.chatGPTTimezone,
+      timeZone: eventStore.mcpTimezone,
     }).format(now)
   const hour = isToday ? now.getHours() + 1 : 9
-  const start = new Date(`${eventStore.chatGPTSelectedDate}T00:00:00`)
+  const start = new Date(`${eventStore.mcpSelectedDate}T00:00:00`)
   start.setHours(hour, 0, 0, 0)
   const end = new Date(start.getTime() + 3_600_000)
   return {
@@ -406,7 +404,7 @@ async function loadSelectedDay(): Promise<void> {
   loading.value = true
   loadError.value = null
   try {
-    await eventStore.showChatGPTEvents(selectedDate.value)
+    await eventStore.loadMcpCalendarTasks(selectedDate.value)
   } catch (error) {
     console.error(error)
     loadError.value =
@@ -427,10 +425,7 @@ async function moveDay(delta: number): Promise<void> {
   await loadSelectedDay()
 }
 
-function setFallback(
-  mode: ChatGPTTaskModalState['mode'],
-  task?: ChatGPTTask,
-): void {
+function setFallback(mode: McpTaskModalState['mode'], task?: McpTask): void {
   fallbackMode.value = mode
   fallbackTask.value = task ? { ...task } : emptyTask()
   fallbackOpen.value = true
@@ -441,7 +436,7 @@ function openFallback(): void {
     return
   }
   const task = pendingFallback.value.taskId
-    ? eventStore.chatGPTTasks.find(
+    ? eventStore.mcpTasks.find(
         (item) => item.id_task === pendingFallback.value?.taskId,
       )
     : undefined
@@ -450,17 +445,19 @@ function openFallback(): void {
 }
 
 async function openTask(
-  mode: ChatGPTTaskModalState['mode'],
-  task?: ChatGPTTask,
+  mode: McpTaskModalState['mode'],
+  task?: McpTask,
 ): Promise<void> {
-  const params: ChatGPTTaskModalState = {
+  const params: McpTaskModalState = {
     mode,
     taskId: task?.id_task,
   }
   pendingFallback.value = params
   modalError.value = null
   try {
-    const opened = await bridge.requestModal(params)
+    const opened = bridge.capabilities.nativeModal
+      ? await bridge.requestModal(params)
+      : false
     if (!opened) {
       setFallback(mode, task)
     }
@@ -471,7 +468,7 @@ async function openTask(
   }
 }
 
-async function removeTask(task: ChatGPTTask): Promise<void> {
+async function removeTask(task: McpTask): Promise<void> {
   if (
     writing.value ||
     !(await modal.confirm(`Удалить событие?\n«${task.name}»`))
@@ -496,7 +493,7 @@ function closeFallback(): void {
 }
 
 function onDraftSaved(): void {
-  createdTask.value = eventStore.chatGPTTasks[0] || createDraft.value
+  createdTask.value = eventStore.mcpTasks[0] || createDraft.value
   createDraft.value = null
 }
 
@@ -505,12 +502,12 @@ function publishMessageModalResult(confirmed: boolean): void {
     return
   }
   messageModalSettled = true
-  const result: ChatGPTModalResult = {
+  const result: McpModalResult = {
     requestId: messageModal.value.requestId,
     confirmed,
   }
   const channel = new BroadcastChannel(
-    getChatGPTModalChannelName(messageModal.value.requestId),
+    getMcpModalChannelName(messageModal.value.requestId),
   )
   channel.postMessage(result)
   channel.close()
@@ -533,13 +530,13 @@ onMounted(async () => {
     window.addEventListener('pagehide', onPageHide, { passive: true })
     return
   }
-  const hydrated = eventStore.applyChatGPTContent(initialContent)
+  const hydrated = eventStore.applyMcpContent(initialContent)
   if (!hydrated) {
     await loadSelectedDay()
   }
   unsubscribe = bridge.subscribe(() => {
     const content = bridge.widgetState?.content || bridge.toolOutput
-    eventStore.applyChatGPTContent(content)
+    eventStore.applyMcpContent(content)
     if (
       !createdTask.value &&
       content?.view === 'create-form' &&
@@ -558,21 +555,21 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.chatgpt-calendar {
+.mcp-app-calendar {
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
 }
 
-.chatgpt-message-modal {
+.mcp-app-message-modal {
   min-width: min(420px, calc(100vw - 32px));
 }
 
-.chatgpt-message-modal__text {
+.mcp-app-message-modal__text {
   white-space: pre-line;
 }
 
-.chatgpt-fallback-card {
+.mcp-app-fallback-card {
   width: min(640px, calc(100vw - 32px));
   max-height: 90vh;
   overflow: auto;
@@ -580,21 +577,21 @@ onBeforeUnmount(() => {
 </style>
 
 <style>
-.chatgpt-unavailable {
+.mcp-app-unavailable {
   min-height: 240px;
 }
 
-html.chatgpt-host,
-html.chatgpt-host body,
-html.chatgpt-host #q-app {
+html.mcp-app-host,
+html.mcp-app-host body,
+html.mcp-app-host #q-app {
   height: auto !important;
   min-height: 0 !important;
   overflow: visible !important;
 }
 
-html.chatgpt-host .q-layout,
-html.chatgpt-host .q-page-container,
-html.chatgpt-host .q-page {
+html.mcp-app-host .q-layout,
+html.mcp-app-host .q-page-container,
+html.mcp-app-host .q-page {
   min-height: 0 !important;
 }
 </style>

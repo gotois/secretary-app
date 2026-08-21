@@ -265,9 +265,9 @@
           clearable
           emit-value
           map-options
-          :disable="isChatGPT"
+          :disable="isMcpApp"
           :hint="
-            isChatGPT
+            isMcpApp
               ? 'Напоминания пока доступны только в Telegram Mini App'
               : undefined
           "
@@ -293,7 +293,7 @@
           :dense="$q.platform.is.desktop"
         />
         <QSelect
-          v-if="isTMA || isChatGPT"
+          v-if="isTMA || isMcpApp"
           v-model="form.target"
           :options="targetOptions"
           label="Кому"
@@ -306,9 +306,9 @@
           clearable
           behavior="menu"
           :loading="targetLoading"
-          :disable="isChatGPT"
+          :disable="isMcpApp"
           :hint="
-            isChatGPT
+            isMcpApp
               ? 'Получатель Telegram доступен только в Mini App'
               : undefined
           "
@@ -386,7 +386,7 @@ import {
   QMenu,
 } from 'quasar'
 import { useRouter, useRoute } from 'vue-router'
-import { isChatGPT, isTMA } from '@/shared/lib/detector'
+import { isMcpApp, isTMA } from '@/shared/lib/detector'
 import useEventStore from '../model/store'
 import { prettyDate, toDatetimeLocal } from '@/shared/lib/dateHelper'
 import { ROUTE_NAMES } from '@/shared/config/routes'
@@ -515,7 +515,7 @@ async function filterTargets(
   value: string,
   update: (callback: () => void) => void,
 ) {
-  if (isChatGPT.value) {
+  if (isMcpApp.value) {
     return
   }
   const query = value.trim()

@@ -1,12 +1,12 @@
 import { boot } from 'quasar/wrappers'
 import useGeoStore from '@/shared/model/geo'
-import { isChatGPT } from '@/shared/lib/detector'
-import { getHostBridge } from '@/shared/lib/hostBridge'
+import { isMcpApp } from '@/shared/lib/detector'
+import { getHostBridge } from '@/shared/lib/mcp/hostBridge'
 
 export default boot(async () => {
   const geoStore = useGeoStore()
 
-  if (isChatGPT.value) {
+  if (isMcpApp.value) {
     const bridge = getHostBridge()
     geoStore.timeZone = bridge.timezone || geoStore.timeZone
     return

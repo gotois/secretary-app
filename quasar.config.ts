@@ -32,7 +32,7 @@ export default defineConfig((ctx: QuasarContext) => {
 
     // https://v2.quasar.dev/quasar-cli/boot-files
     boot: [
-      'chatgpt',
+      'mcp-app',
       'i18n',
       'vue-query',
       'addressbar-color',

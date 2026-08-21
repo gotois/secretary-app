@@ -16,7 +16,7 @@ vi.mock('@/shared/model/geo', () => ({
 
 vi.mock('@/shared/lib/detector', async () => {
   const { computed } = await import('vue')
-  return { isChatGPT: computed(() => false) }
+  return { isMcpApp: computed(() => false) }
 })
 
 import useEventStore from './store'

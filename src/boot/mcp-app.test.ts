@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest'
 import { ROUTE_NAMES } from '@/shared/config/routes'
-import { getInitialRoute, getModalState } from './chatgpt'
+import { getInitialRoute, getModalState } from './mcp-app'
 
-describe('ChatGPT initial route', () => {
+describe('Mcp initial route', () => {
   test('opens the calendar for a regular widget', () => {
     expect(getInitialRoute()).toEqual({ name: ROUTE_NAMES.CALENDAR })
   })

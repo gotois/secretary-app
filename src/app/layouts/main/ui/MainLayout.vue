@@ -1,6 +1,6 @@
 <template>
   <QLayout
-    v-if="needKey && !isChatGPT"
+    v-if="needKey && !isMcpApp"
     view="lHr lpR lfr"
   >
     <QPageContainer>
@@ -31,7 +31,7 @@
     view="lHr lpR lfr"
   >
     <QHeader
-      v-if="!isTMA && !isChatGPT"
+      v-if="!isTMA && !isMcpApp"
       reveal
       :bordered="$q.platform.is.mobile"
       height-hint="98"
@@ -63,7 +63,7 @@
       </QToolbar>
     </QHeader>
     <QDrawer
-      v-if="!isTMA && !isChatGPT"
+      v-if="!isTMA && !isMcpApp"
       v-model="layoutStore.leftDrawerOpen"
       side="left"
       class="scroll-y"
@@ -360,7 +360,7 @@
       />
     </QPageContainer>
     <QPageSticky
-      v-if="!isTMA && !isChatGPT"
+      v-if="!isTMA && !isMcpApp"
       position="bottom-right"
       :offset="[18, 18]"
     >
@@ -380,7 +380,7 @@
       </QFab>
     </QPageSticky>
     <QFooter
-      v-if="!isTMA && !isChatGPT"
+      v-if="!isTMA && !isMcpApp"
       bordered
       :class="{
         'bg-white text-dark': !$q.dark.isActive,
@@ -475,7 +475,7 @@ import useTFAStore from '@/features/two-factor-auth'
 import ToolbarTitleComponent from '@/shared/ui/ToolbarTitleComponent.vue'
 import UserProfile from './UserProfile.vue'
 // import ChatDialog from './ChatDialog.vue'
-import { isChatGPT, isTWA, isTMA } from '@/shared/lib/detector'
+import { isMcpApp, isTWA, isTMA } from '@/shared/lib/detector'
 import { keyPair } from '@/shared/lib/databaseService'
 import { open } from '@/shared/lib/urlHelper'
 import { ROUTE_NAMES } from '@/shared/config/routes'
@@ -687,7 +687,7 @@ async function syncPods() {
 }
 
 onBeforeMount(() => {
-  if (isChatGPT.value) {
+  if (isMcpApp.value) {
     return
   }
   setTimeout(() => {

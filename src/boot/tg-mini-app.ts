@@ -1,7 +1,7 @@
 import { boot } from 'quasar/wrappers'
 import { init, retrieveLaunchParams, viewport } from '@tma.js/sdk'
 import type { Router } from 'vue-router'
-import { isChatGPT, isTMA, isWebApp } from '@/shared/lib/detector'
+import { isMcpApp, isTMA, isWebApp } from '@/shared/lib/detector'
 import { appendErundaScript } from '@/shared/lib/debug'
 import { appendTelegramWebAppScript } from '@/shared/lib/telegram'
 
@@ -16,7 +16,7 @@ function getParams(params: string) {
 }
 
 export default boot(({ router }: { router: Router }) => {
-  if (isChatGPT.value) {
+  if (isMcpApp.value) {
     return
   }
 

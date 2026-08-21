@@ -1,28 +1,28 @@
 import { popup } from '@tma.js/sdk'
 import { useQuasar } from 'quasar'
-import { isChatGPT, isTMA } from './detector'
+import { isMcpApp, isTMA } from './detector'
 import {
-  isChatGPTTaskModalState,
+  isMcpTaskModalState,
   useHostBridge,
-  type ChatGPTMessageModalState,
-} from './hostBridge'
+  type McpMessageModalState,
+} from './mcp/hostBridge'
 
-const CHATGPT_MODAL_TIMEOUT_MS = 60_000
-const CHATGPT_MODAL_CHANNEL_PREFIX = 'secretary-modal:'
+const MCP_MODAL_TIMEOUT_MS = 60_000
+const MCP_MODAL_CHANNEL_PREFIX = 'secretary-modal:'
 
-export interface ChatGPTModalResult {
+export interface McpModalResult {
   requestId: string
   confirmed: boolean
 }
 
-export function getChatGPTModalChannelName(requestId: string): string {
-  return `${CHATGPT_MODAL_CHANNEL_PREFIX}${requestId}`
+export function getMcpModalChannelName(requestId: string): string {
+  return `${MCP_MODAL_CHANNEL_PREFIX}${requestId}`
 }
 
-function isChatGPTModalResult(
+function isMcpAppModalResult(
   value: unknown,
   requestId: string,
-): value is ChatGPTModalResult {
+): value is McpModalResult {
   if (!value || typeof value !== 'object') {
     return false
   }
@@ -89,12 +89,12 @@ export function useModal() {
     }
   }
 
-  function chatGPTModal(
-    mode: ChatGPTMessageModalState['mode'],
+  function mcpModal(
+    mode: McpMessageModalState['mode'],
     message: string,
   ): Promise<boolean> {
     const requestId = crypto.randomUUID()
-    const channel = new BroadcastChannel(getChatGPTModalChannelName(requestId))
+    const channel = new BroadcastChannel(getMcpModalChannelName(requestId))
     return new Promise((resolve) => {
       let settled = false
       const finish = (confirmed: boolean) => {
@@ -108,10 +108,10 @@ export function useModal() {
       }
       const timeout = window.setTimeout(
         () => finish(false),
-        CHATGPT_MODAL_TIMEOUT_MS,
+        MCP_MODAL_TIMEOUT_MS,
       )
       channel.onmessage = (event: MessageEvent<unknown>) => {
-        if (isChatGPTModalResult(event.data, requestId)) {
+        if (isMcpAppModalResult(event.data, requestId)) {
           finish(event.data.confirmed)
         }
       }
@@ -123,19 +123,19 @@ export function useModal() {
           }
         })
         .catch((error) => {
-          console.error('Unable to open ChatGPT modal:', error)
+          console.error('Unable to open Mcp modal:', error)
           finish(false)
         })
     })
   }
 
   async function alert(message: string): Promise<void> {
-    if (isChatGPT.value) {
-      if (isChatGPTTaskModalState(bridge.toolInput)) {
+    if (isMcpApp.value) {
+      if (isMcpTaskModalState(bridge.toolInput)) {
         await quasarAlert(message)
         return
       }
-      await chatGPTModal('alert', message)
+      await mcpModal('alert', message)
       return
     }
     if (isTMA.value) {
@@ -146,11 +146,11 @@ export function useModal() {
   }
 
   async function confirm(message: string): Promise<boolean> {
-    if (isChatGPT.value) {
-      if (isChatGPTTaskModalState(bridge.toolInput)) {
+    if (isMcpApp.value) {
+      if (isMcpTaskModalState(bridge.toolInput)) {
         return quasarConfirm(message)
       }
-      return chatGPTModal('confirm', message)
+      return mcpModal('confirm', message)
     }
     if (isTMA.value) {
       return telegramConfirm(message)

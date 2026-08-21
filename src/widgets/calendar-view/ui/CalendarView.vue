@@ -1,16 +1,14 @@
 <template>
-  <ChatGPTCalendarView v-if="isChatGPT" />
+  <McpCalendarView v-if="isMcpApp" />
   <ScheduleCalendarView v-else />
 </template>
 
 <script setup lang="ts">
 import { defineAsyncComponent } from 'vue'
-import { isChatGPT } from '@/shared/lib/detector'
+import { isMcpApp } from '@/shared/lib/detector'
 import ScheduleCalendarView from './ScheduleCalendarView.vue'
 
-const ChatGPTCalendarView = defineAsyncComponent(() =>
-  import('./ChatGPTCalendarView.vue').then(
-    ({ default: component }) => component,
-  ),
+const McpCalendarView = defineAsyncComponent(() =>
+  import('./McpCalendarView.vue').then(({ default: component }) => component),
 )
 </script>

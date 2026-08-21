@@ -2,7 +2,7 @@ import { computed } from 'vue'
 import { Platform } from 'quasar'
 import * as tgAppSDK from '@tma.js/sdk'
 import { host } from '../../../twa-manifest.json'
-import { isChatGPTHost } from './chatgptHost'
+import { isMcpAppHost } from './mcp/appHost'
 
 export const isTWA = computed(() => {
   return Platform.is.android && document.referrer.includes('android-app://')
@@ -21,4 +21,4 @@ export const isPWA = computed(() => {
   return document.location.host === host
 })
 
-export const isChatGPT = computed(() => isChatGPTHost(document))
+export const isMcpApp = computed(() => isMcpAppHost(document))

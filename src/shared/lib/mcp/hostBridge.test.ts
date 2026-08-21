@@ -1,6 +1,7 @@
 import type { App } from '@modelcontextprotocol/ext-apps'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
-import { initializeHostBridge, type OpenAIGlobals } from './hostBridge'
+import { initializeHostBridge } from './hostBridge'
+import type { OpenAiGlobals } from '@/shared/lib/openai/extensions'
 
 type Listener = (payload: unknown) => void
 
@@ -78,14 +79,14 @@ describe('MCP App host bridge', () => {
     expect(subscriber).toHaveBeenCalledTimes(3)
 
     await expect(
-      bridge.callTool('show', { start_date: '2026-07-27' }),
+      bridge.callTool('list-calendar-tasks', { start_date: '2026-07-27' }),
     ).resolves.toMatchObject({
       structuredContent: {
         view: 'calendar',
       },
     })
     expect(fake.callServerTool).toHaveBeenCalledWith({
-      name: 'show',
+      name: 'list-calendar-tasks',
       arguments: { start_date: '2026-07-27' },
     })
 
@@ -105,7 +106,7 @@ describe('MCP App host bridge', () => {
       },
       requestModal,
       setWidgetState,
-    } satisfies OpenAIGlobals
+    } satisfies OpenAiGlobals
 
     const { bridge } = initializeFakeBridge()
     expect(bridge.toolInput).toEqual({ mode: 'edit', taskId: 42 })

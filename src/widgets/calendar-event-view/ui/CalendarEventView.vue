@@ -50,8 +50,8 @@ import { useI18n } from 'vue-i18n'
 import { mainButton, postEvent } from '@tma.js/sdk'
 import { ROUTE_NAMES } from '@/shared/config/routes'
 import { useEventStore } from '@/features/event-editor'
-import { isChatGPT, isTMA } from '@/shared/lib/detector'
-import { useHostBridge } from '@/shared/lib/hostBridge'
+import { isMcpApp, isTMA } from '@/shared/lib/detector'
+import { useHostBridge } from '@/shared/lib/mcp/hostBridge'
 
 const CalendarEventFormComponent = defineAsyncComponent({
   loader: () => import('@/features/event-editor'),
@@ -105,14 +105,14 @@ async function onRefresh(done: () => void) {
 
 async function onSaved() {
   $q.notify({ type: 'positive', message: 'Сохранено' })
-  if (isChatGPT.value) {
+  if (isMcpApp.value) {
     await bridge.requestClose()
   }
 }
 
 async function onRemoved() {
   $q.notify({ type: 'positive', message: 'Удалено' })
-  if (isChatGPT.value) {
+  if (isMcpApp.value) {
     await bridge.requestClose()
     return
   }
@@ -122,8 +122,8 @@ async function onRemoved() {
 onMounted(async () => {
   $q.loading.show()
   try {
-    if (isChatGPT.value) {
-      eventStore.applyChatGPTContent()
+    if (isMcpApp.value) {
+      eventStore.applyMcpContent()
     }
     task.value = await eventStore.getEvent(props.taskId)
   } catch (error: unknown) {

@@ -39,9 +39,9 @@ import { useI18n } from 'vue-i18n'
 import { mainButton, postEvent } from '@tma.js/sdk'
 import { useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/shared/config/routes'
-import { isChatGPT, isTMA } from '@/shared/lib/detector'
+import { isMcpApp, isTMA } from '@/shared/lib/detector'
 import { useEventStore } from '@/features/event-editor'
-import { useHostBridge } from '@/shared/lib/hostBridge'
+import { useHostBridge } from '@/shared/lib/mcp/hostBridge'
 
 const CalendarEventFormComponent = defineAsyncComponent({
   loader: () => import('@/features/event-editor'),
@@ -69,14 +69,14 @@ interface EmptyTask {
 }
 
 function _now() {
-  if (!isChatGPT.value) {
+  if (!isMcpApp.value) {
     const d = new Date()
     d.setSeconds(0, 0)
     return d.toISOString()
   }
   // todo зачем здесь подключается целый store для этого непонятно
-  eventStore.applyChatGPTContent()
-  const date = eventStore.chatGPTSelectedDate
+  eventStore.applyMcpContent()
+  const date = eventStore.mcpSelectedDate
   const d = new Date(
     `${date}T${String(new Date().getHours()).padStart(2, '0')}:00:00`,
   )
@@ -105,7 +105,7 @@ const emptyTask: EmptyTask = {
 
 async function onSaved() {
   $q.notify({ type: 'positive', message: $t('pages.calendar.title') })
-  if (isChatGPT.value) {
+  if (isMcpApp.value) {
     await bridge.requestClose()
     return
   }

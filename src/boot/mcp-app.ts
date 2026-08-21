@@ -9,14 +9,14 @@ import packageInfo from '../../package.json' with { type: 'json' }
 import { normalizeLocale } from '@/i18n'
 import { ROUTE_NAMES } from '@/shared/config/routes'
 import { appendErundaScript } from '@/shared/lib/debug'
-import { isChatGPT } from '@/shared/lib/detector'
+import { isMcpApp } from '@/shared/lib/detector'
 import {
   HOST_BRIDGE_KEY,
   initializeHostBridge,
-  isChatGPTMessageModalState,
-  type ChatGPTModalState,
+  isMcpMessageModalState,
+  type McpModalState,
   type HostBridge,
-} from '@/shared/lib/hostBridge'
+} from '@/shared/lib/mcp/hostBridge'
 
 const MCP_CONNECT_TIMEOUT_MS = 30_000
 const MCP_RESULT_TIMEOUT_MS = 30_000
@@ -29,8 +29,8 @@ type LifecycleLogger = (event: string, details?: LifecycleDetails) => void
 
 export function getModalState(
   input?: Record<string, unknown>,
-): ChatGPTModalState | undefined {
-  if (isChatGPTMessageModalState(input)) {
+): McpModalState | undefined {
+  if (isMcpMessageModalState(input)) {
     return {
       mode: input.mode,
       message: input.message,
@@ -224,7 +224,7 @@ function applyConnectedHostPreferences(bridge: HostBridge): () => void {
 }
 
 export default boot(async ({ app: vueApp, router }) => {
-  if (!isChatGPT.value) {
+  if (!isMcpApp.value) {
     vueApp.provide(HOST_BRIDGE_KEY, initializeHostBridge())
     return
   }
@@ -232,7 +232,7 @@ export default boot(async ({ app: vueApp, router }) => {
   const log = createLifecycleLogger()
   log('iframe started')
   installLifecycleDiagnostics(log)
-  document.documentElement.classList.add('chatgpt-host')
+  document.documentElement.classList.add('mcp-app-host')
   renderStartupState('Загрузка JavaScript…')
 
   try {
@@ -408,6 +408,6 @@ export default boot(async ({ app: vueApp, router }) => {
   )
   renderStartupState('Открытие календаря…')
   openInitialRoute(router, bridge).catch((error) => {
-    console.error('Unable to open ChatGPT route:', error)
+    console.error('Unable to open Mcp route:', error)
   })
 })
