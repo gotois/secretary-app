@@ -16,7 +16,7 @@ export default {
   },
   pages: {
     welcome: {
-      title: 'ContractKeeper - Electronic Signature and contract Management',
+      title: 'Secretary — tasks, meetings and events in one calendar',
     },
     create: {
       title: 'Create a contract',

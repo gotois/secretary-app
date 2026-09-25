@@ -1,9 +1,9 @@
 [![Netlify Status](https://api.netlify.com/api/v1/badges/f467de0f-4773-4f8a-ac3b-5d4aeca0ea83/deploy-status)](https://app.netlify.com/sites/my-archive/deploys)
 
-# Секретарь WebApp
+# Secretary App
 > Ваша персональная криптобезопасная база обязательств.
 
-[![Android TWA](https://img.shields.io/badge/Android_TWA-Install-green?logo=android&style=for-the-badge&link=https://play.google.com/store/apps/details?id=ru.baskovsky.archive.twa)](https://play.google.com/store/apps/details?id=ru.baskovsky.archive.twa)
+[![TWA](https://img.shields.io/badge/Android_TWA-Install-green?logo=android&style=for-the-badge&link=https://play.google.com/store/apps/details?id=ru.baskovsky.archive.twa)](https://play.google.com/store/apps/details?id=ru.baskovsky.archive.twa)
 [![TMA](https://img.shields.io/badge/Telegram_Mini_Apps-gray?logo=telegram&style=for-the-badge&link=https://t.me/gotois_bot/App)](https://t.me/gotois_bot/App)
 [![PWA](https://img.shields.io/website/https/archive.gotointeractive.com.svg?style=for-the-badge&link=https://archive.gotointeractive.com)](https://archive.gotointeractive.com/)
 
@@ -91,6 +91,25 @@ bubblewrap install
 ```bash
 npm run build
 ```
+
+## Локальная проверка MCP App UI
+
+```bash
+npm run build
+npm run dev:mcp-app
+```
+
+После запуска откройте `http://127.0.0.1:4173`. Стенд поддерживает сценарии
+календаря, формы создания, ошибки tool, отсутствующего результата и
+отсутствующего JS-модуля. Вызовы tools обслуживаются fixture-данными в памяти и
+не записывают задачи в БД. Кнопка смены темы отправляет приложению уведомление
+об изменении host context.
+
+Сертификат dev-сервера должен быть доверен браузеру и Node.js. При необходимости
+передайте CA через `NODE_EXTRA_CA_CERTS`. Кнопка перезапуска на стенде повторно
+загружает iframe после изменений приложения.
+
+Полную интеграцию проверяйте через [подключение MCP-сервера в ChatGPT](https://developers.openai.com/plugins/deploy/connect-chatgpt).
 
 ####  Сборка TWA
 
