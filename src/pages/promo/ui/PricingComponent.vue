@@ -6,6 +6,13 @@
       :bordered="$q.platform.is.desktop"
       class="col bg-grey-1 text-dark col-3"
     >
+      <QBadge
+        floating
+        rounded
+        color="light-blue-3"
+        text-color="dark"
+        label="Beta"
+      />
       <QCardSection class="text-center">
         <div class="text-h5 text-weight-bolder">
           {{ $t('pricing.free.title') }}
@@ -30,17 +37,9 @@
         >
           <QTree
             class="full-width"
-            :nodes="freeSupport"
-            :default-expand-all="$q.platform.is.desktop"
-            :dense="$q.platform.is.desktop"
-            node-key="label"
-            text-color="dark"
-          />
-          <QTree
-            class="full-width"
-            :nodes="freeFunctional"
-            :default-expand-all="$q.platform.is.desktop"
-            :dense="$q.platform.is.desktop"
+            :nodes="freeDetails"
+            :default-expand-all="$q.screen.gt.sm"
+            :dense="$q.screen.gt.sm"
             node-key="label"
             text-color="dark"
           />
@@ -53,6 +52,13 @@
       :bordered="$q.platform.is.desktop"
       class="bg-primary text-white col-3"
     >
+      <QBadge
+        floating
+        rounded
+        color="warning"
+        text-color="dark"
+        label="In active development"
+      />
       <QCardSection class="text-center">
         <div class="text-h5 text-weight-bolder">
           {{ $t('pricing.premium.title') }}
@@ -79,17 +85,9 @@
         >
           <QTree
             class="full-width"
-            :nodes="premiumSupport"
-            :default-expand-all="$q.platform.is.desktop"
-            :dense="$q.platform.is.desktop"
-            node-key="label"
-            text-color="dark"
-          />
-          <QTree
-            class="full-width"
-            :nodes="premiumFunctional"
-            :default-expand-all="$q.platform.is.desktop"
-            :dense="$q.platform.is.desktop"
+            :nodes="premiumDetails"
+            :default-expand-all="$q.screen.gt.sm"
+            :dense="$q.screen.gt.sm"
             node-key="label"
             text-color="dark"
           />
@@ -102,6 +100,13 @@
       :bordered="$q.platform.is.desktop"
       class="bg-black text-white col-3"
     >
+      <QBadge
+        floating
+        rounded
+        color="deep-purple-2"
+        text-color="dark"
+        label="Alpha"
+      />
       <QCardSection class="text-center">
         <div class="text-h5 text-weight-bolder">
           {{ $t('pricing.vip.title') }}
@@ -128,17 +133,9 @@
         >
           <QTree
             class="full-width"
-            :nodes="vipSupport"
-            :default-expand-all="$q.platform.is.desktop"
-            :dense="$q.platform.is.desktop"
-            node-key="label"
-            text-color="dark"
-          />
-          <QTree
-            class="full-width"
-            :nodes="vipFunctional"
-            :default-expand-all="$q.platform.is.desktop"
-            :dense="$q.platform.is.desktop"
+            :nodes="vipDetails"
+            :default-expand-all="$q.screen.gt.sm"
+            :dense="$q.screen.gt.sm"
             node-key="label"
             text-color="dark"
           />
@@ -157,6 +154,7 @@ import {
   QSeparator,
   QList,
   QTree,
+  QBadge,
 } from 'quasar'
 
 const $q = useQuasar()

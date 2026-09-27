@@ -1,5 +1,8 @@
 <template>
-  <div v-html="html" />
+  <div
+    class="privacy-content"
+    v-html="html"
+  />
 </template>
 <script lang="ts" setup>
 import { onMounted } from 'vue'
@@ -14,3 +17,8 @@ onMounted(async () => {
   html.value = await parse(md)
 })
 </script>
+<style scoped>
+.privacy-content :deep(p) {
+  white-space: pre-line;
+}
+</style>

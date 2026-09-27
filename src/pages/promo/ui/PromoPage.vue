@@ -1,123 +1,151 @@
 <template>
   <QScrollArea
-    class="absolute-full fit fullscreen flex flex-center"
+    class="absolute-full fit flex flex-center"
     :class="{
       'bg-white text-dark': !$q.dark.isActive,
       'bg-dark text-white': $q.dark.isActive,
     }"
   >
-    <QCard
-      flat
-      class="bg-accent self-baseline"
-      square
-      style="padding-top: 120px"
-      :style="{
-        paddingLeft: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
-        paddingRight: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
-      }"
+    <QScrollObserver
+      :debounce="50"
+      @scroll="onPromoScroll"
+    />
+    <QParallax
+      class="promo-hero bg-accent"
+      :height="$q.screen.gt.sm ? 540 : 640"
+      :speed="0.45"
     >
-      <h1
-        class="text-white text-uppercase text-center text-weight-light no-margin no-padding"
+      <template #media>
+        <div class="promo-hero-media" />
+      </template>
+
+      <QCard
+        flat
+        class="transparent full-width"
+        square
+        style="padding-top: 120px"
         :style="{
-          'font-size': !$q.platform.is.desktop ? '5vmax' : '3vmax',
-          'line-height': 1,
+          paddingLeft: $q.screen.gt.sm ? 'calc(50vw / 2)' : null,
+          paddingRight: $q.screen.gt.sm ? 'calc(50vw / 2)' : null,
         }"
       >
-        Ваш "Виртуальный&#x202F;секретарь"
-      </h1>
-      <h2
-        class="text-white text-weight-medium"
-        style="font-size: x-large; line-height: 1"
-        :class="{
-          'text-center no-padding': $q.platform.is.desktop,
-          'text-left q-pa-md': !$q.platform.is.desktop,
-        }"
-      >
-        Решение автоматизирует планирование, повышает продуктивность и помогает
-        достичь баланса между работой и жизнью, индивидуально адаптируясь под
-        потребности каждого пользователя.
-      </h2>
-
-      <QCardActions align="center">
-        <QBtn
-          color="white"
-          class="q-ma-lg"
-          :style="{ paddingLeft: '24px', paddingRight: '24px' }"
-          :class="{ 'full-width': !$q.platform.is.desktop }"
-          glossy
-          push
-          fab
-          @click="registerPage"
-        >
-          <QIcon
-            v-if="$q.platform.is.desktop"
-            name="img:/icons/safari-pinned-tab.svg"
-          />
-          <span class="q-ml-xs text-accent text-weight-bolder">
-            Подключиться
-          </span>
-        </QBtn>
-      </QCardActions>
-
-      <QSpace class="q-mb-xl" />
-
-      <div class="flex justify-center row">
-        <QCardSection
-          class="flex q-pt-none col-12"
-          :class="{
-            'text-left': $q.platform.is.desktop,
-            'text-center': !$q.platform.is.desktop,
+        <h1
+          class="text-white text-uppercase text-center text-weight-light no-margin no-padding"
+          :style="{
+            'font-size': !$q.screen.gt.sm ? '5vmax' : '3vmax',
+            'line-height': 1,
           }"
         >
+          Ваш "Секретарь"
+        </h1>
+        <h2
+          class="text-white text-weight-medium"
+          style="font-size: x-large; line-height: 1"
+          :class="{
+            'text-center no-padding': $q.screen.gt.sm,
+            'text-left q-pa-md': !$q.screen.gt.sm,
+          }"
+        >
+          Задачи, встречи и события — в одном календаре. Работает в Web App,
+          Telegram и MCP-клиентах, включая Codex.
+        </h2>
+
+        <QCardActions align="center">
           <QBtn
-            v-if="!langStore.isRussian"
-            class="q-ma-xs"
-            icon="play_arrow"
-            color="black"
-            :href="GOOGLE_PLAY_URL"
+            color="white"
+            class="q-ma-lg"
+            :style="{ paddingLeft: '24px', paddingRight: '24px' }"
+            :class="{ 'full-width': !$q.screen.gt.sm }"
+            glossy
+            push
+            fab
+            @click="openConnectDialog"
           >
-            Google Play
+            <QIcon
+              v-if="$q.screen.gt.sm"
+              name="img:/icons/safari-pinned-tab.svg"
+            />
+            <span class="q-ml-xs text-accent text-weight-bolder">
+              Подключиться
+            </span>
           </QBtn>
-          <QBtn
-            v-if="TELEGRAM_BOT_NAME"
-            icon="telegram"
-            class="q-ma-xs"
-            color="blue"
-            :href="`https://t.me/${TELEGRAM_BOT_NAME}?start=start`"
-          >
-            Telegram
-          </QBtn>
-        </QCardSection>
-      </div>
-    </QCard>
+        </QCardActions>
+
+        <QSpace class="q-mb-xl" />
+
+        <div class="flex justify-center row">
+          <QCardSection class="flex justify-center q-pt-none col-12">
+            <QBtn
+              class="q-ma-xs"
+              icon="play_arrow"
+              color="grey-10"
+              text-color="white"
+              :href="GOOGLE_PLAY_URL"
+            >
+              Google Play
+            </QBtn>
+            <QBtn
+              v-if="TELEGRAM_BOT_NAME"
+              icon="telegram"
+              class="q-ma-xs"
+              color="light-blue-9"
+              text-color="white"
+              :href="`https://t.me/${TELEGRAM_BOT_NAME}?start=start`"
+            >
+              Telegram Bot
+            </QBtn>
+            <QBtn
+              icon="terminal"
+              class="q-ma-xs"
+              color="deep-orange-10"
+              text-color="white"
+              @click="openCodexApp"
+            >
+              Codex App
+            </QBtn>
+            <QBtn
+              icon="install_desktop"
+              class="q-ma-xs"
+              color="deep-purple-8"
+              text-color="white"
+              @click="registerPage"
+            >
+              PWA
+            </QBtn>
+          </QCardSection>
+        </div>
+      </QCard>
+    </QParallax>
 
     <h2
       :class="{
-        'text-center q-ma-md': $q.platform.is.desktop,
-        'q-pl-md q-pr-md': !$q.platform.is.desktop,
+        'text-center q-ma-md': $q.screen.gt.sm,
+        'q-pl-md q-pr-md': !$q.screen.gt.sm,
       }"
     >
-      О платформе
+      От сообщения до события
     </h2>
     <div class="flex justify-center full-width q-mb-xl">
       <QCard
         flat
         class="q-ma-xs full-width"
         :style="{
-          paddingLeft: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
-          paddingRight: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
+          paddingLeft: $q.screen.gt.sm ? 'calc(50vw / 2)' : null,
+          paddingRight: $q.screen.gt.sm ? 'calc(50vw / 2)' : null,
         }"
       >
         <QCardSection>
           <div class="text-subtitle1 text-weight-bold">
-            Секретарь — платформа календарей для сообществ Telegram.
+            Планируйте встречи сообщества прямо в Telegram.
           </div>
           <div class="q-mt-sm">
             <b>Принцип работы:</b>
             <ul>
-              <li>в сообщество добавляет бота</li>
-              <li>через бота администраторы создают событие</li>
-              <li>участники сообщества добавляют событие в календарь</li>
+              <li>Добавьте бота в сообщество</li>
+              <li>Администратор создаёт событие через Telegram Mini App</li>
+              <li>
+                Участники отвечают «Иду» — событие появляется в их календаре
+              </li>
             </ul>
           </div>
         </QCardSection>
@@ -126,11 +154,11 @@
 
     <h2
       :class="{
-        'text-center q-ma-md': $q.platform.is.desktop,
-        'q-pl-md q-pr-md': !$q.platform.is.desktop,
+        'text-center q-ma-md': $q.screen.gt.sm,
+        'q-pl-md q-pr-md': !$q.screen.gt.sm,
       }"
     >
-      Персональный помощник для управления временем и задачами
+      Один календарь — несколько способов работы
     </h2>
 
     <div class="flex justify-center full-width">
@@ -138,173 +166,147 @@
         flat
         class="q-ma-xs full-width"
         :style="{
-          paddingLeft: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
-          paddingRight: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
+          paddingLeft: $q.screen.gt.sm ? 'calc(50vw / 2)' : null,
+          paddingRight: $q.screen.gt.sm ? 'calc(50vw / 2)' : null,
         }"
       >
         <QCardSection>
           <div class="text-subtitle1">
-            Секретарь — это умный планировщик задач, который:
+            Создавайте и редактируйте события там, где удобно.
           </div>
         </QCardSection>
         <QList>
           <QItem>
             <QItemSection avatar>
               <QIcon
-                color="accent"
+                :color="promoAccentColor"
                 name="psychology"
               />
             </QItemSection>
             <QItemSection>
-              <QItemLabel>Понимает цели на русском языке</QItemLabel>
+              <QItemLabel>Обычный язык</QItemLabel>
               <QItemLabel caption>
-                Просто скажите или напишите что нужно сделать — без шаблонов и
-                форм
+                Пишите или отправляйте голосовые сообщения Telegram-боту
               </QItemLabel>
             </QItemSection>
           </QItem>
           <QItem>
             <QItemSection avatar>
               <QIcon
-                color="accent"
+                :color="promoAccentColor"
                 name="sort"
               />
             </QItemSection>
             <QItemSection>
-              <QItemLabel>Автоматически расставляет приоритеты</QItemLabel>
+              <QItemLabel>Категории и приоритеты</QItemLabel>
               <QItemLabel caption>
-                Сортирует задачи по важности, срочности и контексту (работа /
-                личное)
+                Разделяйте рабочие и личные дела, задавайте важность
               </QItemLabel>
             </QItemSection>
           </QItem>
           <QItem>
             <QItemSection avatar>
               <QIcon
-                color="accent"
+                :color="promoAccentColor"
                 name="calendar_today"
               />
             </QItemSection>
             <QItemSection>
-              <QItemLabel>Сразу показывает задачи во времени</QItemLabel>
+              <QItemLabel>Календарь в интерфейсе</QItemLabel>
               <QItemLabel caption>
-                Все задачи видны в календаре — без лишних действий
+                Web App и MCP App показывают события по времени
               </QItemLabel>
             </QItemSection>
           </QItem>
           <QItem>
             <QItemSection avatar>
               <QIcon
-                color="accent"
+                :color="promoAccentColor"
                 name="sync"
               />
             </QItemSection>
             <QItemSection>
-              <QItemLabel>Интегрируется с другими сервисами</QItemLabel>
+              <QItemLabel>Экспорт и подписка</QItemLabel>
               <QItemLabel caption>
-                Подключайте календари, модели ИИ и сервисы
+                Открывайте события в Google Calendar или подключайте iCalendar
               </QItemLabel>
             </QItemSection>
           </QItem>
         </QList>
-        <QCardSection class="q-pt-none text-left">
-          1. Создание и регистрация* документов
-          <QSeparator
-            spaced
-            inset
-          />
-          2. Организация движения* и учета документов*
-          <QSeparator
-            spaced
-            inset
-          />
-          3. Хранение документов
-        </QCardSection>
-        <div>* В разработке</div>
       </QCard>
     </div>
 
     <h2
       :class="{
-        'text-center q-ma-md': $q.platform.is.desktop,
-        'q-pl-md q-pr-md': !$q.platform.is.desktop,
+        'text-center q-ma-md': $q.screen.gt.sm,
+        'q-pl-md q-pr-md': !$q.screen.gt.sm,
       }"
     >
       Почему это удобно
     </h2>
     <div
       class="flex justify-center"
-      :class="{ row: $q.platform.is.desktop }"
+      :class="{ row: $q.screen.gt.sm }"
     >
       <QCard
         class="q-ma-md col-3"
-        :bordered="$q.platform.is.desktop"
+        :bordered="$q.screen.gt.sm"
         flat
       >
         <QCardSection>
-          <div class="text-h6">Электронный архив задач и расписаний</div>
+          <div class="text-h6">План на виду</div>
           <div class="text-subtitle2">
-            Виртуальный секретарь сохраняет и упорядочивает ваши планы, задачи и
-            события, обеспечивая их доступность и простое управление через
-            цифровую децентрализованную платформу.
+            Задачи, встречи и события собраны в одном календаре.
           </div>
         </QCardSection>
       </QCard>
       <QCard
         class="q-ma-md col-3"
-        :bordered="$q.platform.is.desktop"
+        :bordered="$q.screen.gt.sm"
         flat
       >
         <QCardSection>
-          <div class="text-h6">Безопасность данных</div>
+          <div class="text-h6">Контроль перед созданием</div>
           <div class="text-subtitle2">
-            Система защищает ваши данные с помощью современных методов
-            шифрования и дает полный контроль над информацией, интегрированной с
-            внешними источниками.
+            В Codex Секретарь проверяет занятость и показывает редактируемую
+            форму.
           </div>
         </QCardSection>
       </QCard>
       <QCard
         class="q-ma-md col-3"
-        :bordered="$q.platform.is.desktop"
+        :bordered="$q.screen.gt.sm"
         flat
       >
         <QCardSection>
-          <div class="text-h6">Дружелюбная и адаптивная платформа</div>
+          <div class="text-h6">Встречи в Telegram</div>
           <div class="text-subtitle2">
-            Интерфейс виртуального секретаря интуитивно понятен, а алгоритмы
-            искусственного интеллекта помогают организовать задачи и принимать
-            решения с учетом ваших предпочтений.
+            Администраторы создают события, участники отвечают «Иду» или «Не
+            иду».
           </div>
         </QCardSection>
       </QCard>
       <QCard
         class="q-ma-md col-3"
-        :bordered="$q.platform.is.desktop"
+        :bordered="$q.screen.gt.sm"
         flat
       >
         <QCardSection>
-          <div class="text-h6">Доступность и поддержка</div>
+          <div class="text-h6">Свои данные</div>
           <div class="text-subtitle2">
-            Платформа предоставляет круглосуточную поддержку и инструменты для
-            быстрого начала работы, независимо от уровня технологической
-            подготовки пользователя.
+            Храните события на устройстве или подключите Solid Pod.
           </div>
         </QCardSection>
       </QCard>
       <QCard
         class="q-ma-md col-3"
-        :bordered="$q.platform.is.desktop"
+        :bordered="$q.screen.gt.sm"
         flat
       >
         <QCardSection>
-          <div class="text-h6">
-            Обеспечение согласованности в управлении временем между участниками
-          </div>
+          <div class="text-h6">Открытый формат</div>
           <div class="text-subtitle2">
-            1. Создание расписания и его синхронизация с внешними системами.<br />
-            2. Рекомендации по приоритетам на основе анализа данных.<br />
-            3. Хранение, обновление и автоматическая передача договора.
+            Экспортируйте календарь в iCalendar для совместимых приложений.
           </div>
         </QCardSection>
       </QCard>
@@ -312,47 +314,35 @@
 
     <h2
       :class="{
-        'text-center q-ma-md': $q.platform.is.desktop,
-        'q-pl-md q-pr-md': !$q.platform.is.desktop,
+        'text-center q-ma-md': $q.screen.gt.sm,
+        'q-pl-md q-pr-md': !$q.screen.gt.sm,
       }"
     >
-      Сохраняйте концентрацию и безопасность
+      Не теряйте мысль
     </h2>
     <div
       class="flex justify-center"
-      :class="{ row: $q.platform.is.desktop }"
+      :class="{ row: $q.screen.gt.sm }"
     >
       <QCard
         class="q-ma-md col-3"
-        :bordered="$q.platform.is.desktop"
+        :bordered="$q.screen.gt.sm"
         flat
       >
         <QCardSection>
           <div class="row items-center q-gutter-sm q-mb-sm">
             <QIcon
-              name="directions_car"
-              color="accent"
+              name="mic"
+              :color="promoAccentColor"
               size="sm"
             />
-            <div class="text-h6">Безопасность на дороге</div>
+            <div class="text-h6">Голос в Telegram</div>
           </div>
           <div class="text-subtitle2">
-            Вы едете и вспомнили, что нужно забрать вещи из химчистки. Вместо
-            того чтобы набирать текст за рулём, просто нажмите кнопку и скажите:
+            Надиктуйте задачу боту, когда неудобно печатать.
           </div>
         </QCardSection>
         <QCardSection class="q-pt-none">
-          <QCard
-            flat
-            class="bg-grey-2 text-dark rounded-borders q-pa-sm q-mb-xs"
-          >
-            <QIcon
-              name="mic"
-              size="xs"
-              class="q-mr-xs"
-            />
-            <em>«Напомни, когда приеду на работу, зайти в химчистку»</em>
-          </QCard>
           <QCard
             flat
             class="bg-grey-2 text-dark rounded-borders q-pa-sm"
@@ -369,28 +359,23 @@
 
       <QCard
         class="q-ma-md col-3"
-        :bordered="$q.platform.is.desktop"
+        :bordered="$q.screen.gt.sm"
         flat
       >
         <QCardSection>
           <div class="row items-center q-gutter-sm q-mb-sm">
             <QIcon
               name="notifications_off"
-              color="accent"
+              :color="promoAccentColor"
               size="sm"
             />
-            <div class="text-h6">Борьба с информационным шумом</div>
+            <div class="text-h6">Меньше отвлечений</div>
           </div>
           <div class="text-subtitle2">
-            Входящие сообщения и уведомления отвлекают. Голосовое напоминание
-            позволяет сразу зафиксировать мысль, не теряя фокус.
+            Зафиксируйте дело одним сообщением и вернитесь к работе.
           </div>
         </QCardSection>
         <QCardSection class="q-pt-none">
-          <div class="text-caption q-mb-xs text-grey-7">
-            Пример: читаете статью и видите книгу, которую давно хотели
-            прочесть:
-          </div>
           <QCard
             flat
             class="bg-grey-2 text-dark rounded-borders q-pa-sm"
@@ -407,20 +392,20 @@
 
       <QCard
         class="q-ma-md col-3"
-        :bordered="$q.platform.is.desktop"
+        :bordered="$q.screen.gt.sm"
         flat
       >
         <QCardSection>
           <div class="row items-center q-gutter-sm q-mb-sm">
             <QIcon
               name="place"
-              color="accent"
+              :color="promoAccentColor"
               size="sm"
             />
-            <div class="text-h6">Гео-контекст</div>
+            <div class="text-h6">Место выполнения</div>
           </div>
           <div class="text-subtitle2">
-            Секретарь понимает не только время, но и активность.
+            Добавьте адрес — он сохранится вместе с задачей.
           </div>
         </QCardSection>
         <QCardSection class="q-pt-none">
@@ -429,33 +414,27 @@
             class="bg-grey-2 text-dark rounded-borders q-pa-sm q-mb-xs"
           >
             <QIcon
-              name="mic"
+              name="place"
               size="xs"
               class="q-mr-xs"
             />
-            <em>
-              «Напомни прочитать договор, когда приду домой и сяду за компьютер»
-            </em>
+            <em>«Забрать заказ в пункте выдачи на Тверской»</em>
           </QCard>
-          <div class="text-caption text-grey-7 q-mt-xs">
-            Секретарь сам поймёт, где и когда вы сможете выполнить задачу, и
-            напомнит именно в нужный момент.
-          </div>
         </QCardSection>
       </QCard>
     </div>
 
     <h2
       :class="{
-        'text-center q-ma-md': $q.platform.is.desktop,
-        'q-pl-md q-pr-md': !$q.platform.is.desktop,
+        'text-center q-ma-md': $q.screen.gt.sm,
+        'q-pl-md q-pr-md': !$q.screen.gt.sm,
       }"
     >
       Сравнение с другими сервисами
     </h2>
 
     <div
-      v-if="$q.platform.is.desktop"
+      v-if="$q.screen.gt.sm"
       class="flex justify-center full-width q-mb-lg"
       :style="{
         paddingLeft: 'calc(50vw / 4)',
@@ -466,6 +445,7 @@
         flat
         bordered
         wrap-cells
+        :dark="$q.dark.isActive"
         class="full-width"
       >
         <thead>
@@ -474,58 +454,58 @@
             <th class="text-center">Секретарь</th>
             <th class="text-center">Todoist</th>
             <th class="text-center">TickTick</th>
-            <th class="text-center">Apple Siri</th>
+            <th class="text-center">Apple Reminders</th>
             <th class="text-center">Алиса</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>Понимает задачи на обычном языке</td>
-            <td class="text-center">✅</td>
-            <td class="text-center">⚠️ только дата и время</td>
-            <td class="text-center">⚠️ только дата и время</td>
-            <td class="text-center">⚠️ понимает голос</td>
-            <td class="text-center">⚠️ часто ошибается</td>
+            <td>Создание обычным языком</td>
+            <td class="text-center">✅ Текст и голос в Telegram</td>
+            <td class="text-center">✅ Текст</td>
+            <td class="text-center">✅ Текст и голос</td>
+            <td class="text-center">✅ Текст и Siri</td>
+            <td class="text-center">✅ Голос</td>
           </tr>
           <tr>
-            <td>Автоматическая сортировка задач (работа / личное)</td>
-            <td class="text-center">✅</td>
-            <td class="text-center">❌</td>
-            <td class="text-center">❌</td>
-            <td class="text-center">❌</td>
-            <td class="text-center">❌</td>
+            <td>Категории</td>
+            <td class="text-center">✅ 4 категории</td>
+            <td class="text-center">✅ Проекты и метки</td>
+            <td class="text-center">✅ Списки и теги</td>
+            <td class="text-center">✅ Списки и теги</td>
+            <td class="text-center">—</td>
           </tr>
           <tr>
-            <td>Автоматическая расстановка приоритетов</td>
+            <td>Приоритеты</td>
+            <td class="text-center">✅ 3 уровня</td>
             <td class="text-center">✅</td>
-            <td class="text-center">❌</td>
-            <td class="text-center">❌</td>
-            <td class="text-center">❌</td>
-            <td class="text-center">❌</td>
+            <td class="text-center">✅</td>
+            <td class="text-center">✅</td>
+            <td class="text-center">—</td>
           </tr>
           <tr>
-            <td>Все задачи сразу видны в календаре</td>
+            <td>Календарь</td>
+            <td class="text-center">✅ Встроен в Web и MCP App</td>
+            <td class="text-center">⚠️ Вид — Pro/Business</td>
             <td class="text-center">✅</td>
-            <td class="text-center">⚠️ через интеграции</td>
-            <td class="text-center">✅</td>
-            <td class="text-center">⚠️ через Reminders</td>
-            <td class="text-center">⚠️ через календарь</td>
+            <td class="text-center">⚠️ Экосистема Apple</td>
+            <td class="text-center">⚠️ Напоминания</td>
           </tr>
           <tr>
-            <td>Работает на разных устройствах</td>
+            <td>Интерфейсы</td>
+            <td class="text-center">✅ Web, Telegram, MCP</td>
             <td class="text-center">✅</td>
             <td class="text-center">✅</td>
-            <td class="text-center">✅</td>
-            <td class="text-center">❌ только Apple</td>
-            <td class="text-center">⚠️ в основном Яндекс</td>
+            <td class="text-center">⚠️ Apple</td>
+            <td class="text-center">⚠️ Яндекс</td>
           </tr>
           <tr>
-            <td>Уведомления в мессенджерах (Telegram)</td>
-            <td class="text-center">✅</td>
-            <td class="text-center">❌</td>
-            <td class="text-center">❌</td>
-            <td class="text-center">❌</td>
-            <td class="text-center">❌</td>
+            <td>События для Telegram-групп</td>
+            <td class="text-center">✅ Создание и ответы участников</td>
+            <td class="text-center">—</td>
+            <td class="text-center">—</td>
+            <td class="text-center">—</td>
+            <td class="text-center">—</td>
           </tr>
         </tbody>
       </QMarkupTable>
@@ -546,26 +526,19 @@
         <QCard flat>
           <QList dense>
             <QItem>
-              <QItemSection>✅ Понимает задачи на обычном языке</QItemSection>
+              <QItemSection>✅ Текст и голос в Telegram</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>
-                ✅ Автоматическая сортировка (работа / личное)
-              </QItemSection>
+              <QItemSection>✅ 4 категории и 3 приоритета</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>
-                ✅ Автоматическая расстановка приоритетов
-              </QItemSection>
+              <QItemSection>✅ Встроенный календарь</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>✅ Все задачи видны в календаре</QItemSection>
+              <QItemSection>✅ Web App, Telegram и MCP</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>✅ Работает на разных устройствах</QItemSection>
-            </QItem>
-            <QItem>
-              <QItemSection>✅ Уведомления в Telegram</QItemSection>
+              <QItemSection>✅ Групповые события и ответы</QItemSection>
             </QItem>
           </QList>
         </QCard>
@@ -577,20 +550,16 @@
         <QCard flat>
           <QList dense>
             <QItem>
-              <QItemSection>⚠️ Понимает только дату и время</QItemSection>
+              <QItemSection>✅ Обычный язык</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>❌ Нет сортировки по контексту</QItemSection>
-            </QItem>
-            <QItem><QItemSection>❌ Нет авто-приоритетов</QItemSection></QItem>
-            <QItem>
-              <QItemSection>⚠️ Календарь через интеграции</QItemSection>
+              <QItemSection>✅ Проекты, метки и приоритеты</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>✅ Работает на разных устройствах</QItemSection>
+              <QItemSection>⚠️ Календарь — Pro/Business</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>❌ Нет уведомлений в Telegram</QItemSection>
+              <QItemSection>✅ Web, desktop и mobile</QItemSection>
             </QItem>
           </QList>
         </QCard>
@@ -602,45 +571,35 @@
         <QCard flat>
           <QList dense>
             <QItem>
-              <QItemSection>⚠️ Понимает только дату и время</QItemSection>
+              <QItemSection>✅ Текст и голос</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>❌ Нет сортировки по контексту</QItemSection>
-            </QItem>
-            <QItem><QItemSection>❌ Нет авто-приоритетов</QItemSection></QItem>
-            <QItem>
-              <QItemSection>✅ Задачи видны в календаре</QItemSection>
+              <QItemSection>✅ Списки, теги и приоритеты</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>✅ Работает на разных устройствах</QItemSection>
+              <QItemSection>✅ Календарь и интеграции</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>❌ Нет уведомлений в Telegram</QItemSection>
+              <QItemSection>✅ Web, desktop и mobile</QItemSection>
             </QItem>
           </QList>
         </QCard>
       </QExpansionItem>
       <QExpansionItem
         icon="check_box_outline_blank"
-        label="Apple Siri"
+        label="Apple Reminders"
       >
         <QCard flat>
           <QList dense>
-            <QItem><QItemSection>⚠️ Понимает голос</QItemSection></QItem>
+            <QItem><QItemSection>✅ Текст и Siri</QItemSection></QItem>
             <QItem>
-              <QItemSection>❌ Нет сортировки по контексту</QItemSection>
+              <QItemSection>✅ Списки, теги и приоритеты</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>❌ Нет авто-приоритетов</QItemSection>
+              <QItemSection>⚠️ Календарь в экосистеме Apple</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>⚠️ Через Reminders</QItemSection>
-            </QItem>
-            <QItem>
-              <QItemSection>❌ Только Apple</QItemSection>
-            </QItem>
-            <QItem>
-              <QItemSection>❌ Нет уведомлений в Telegram</QItemSection>
+              <QItemSection>⚠️ Устройства Apple</QItemSection>
             </QItem>
           </QList>
         </QCard>
@@ -652,32 +611,30 @@
         <QCard flat>
           <QList dense>
             <QItem>
-              <QItemSection>⚠️ Часто ошибается</QItemSection>
+              <QItemSection>✅ Голосовые напоминания</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>❌ Нет сортировки по контексту</QItemSection>
+              <QItemSection>⚠️ Без отдельного календаря задач</QItemSection>
             </QItem>
             <QItem>
-              <QItemSection>❌ Нет авто-приоритетов</QItemSection>
-            </QItem>
-            <QItem>
-              <QItemSection>⚠️ Через календарь</QItemSection>
-            </QItem>
-            <QItem>
-              <QItemSection>⚠️ В основном Яндекс</QItemSection>
-            </QItem>
-            <QItem>
-              <QItemSection>❌ Нет уведомлений в Telegram</QItemSection>
+              <QItemSection>⚠️ Сервисы Яндекса</QItemSection>
             </QItem>
           </QList>
         </QCard>
       </QExpansionItem>
     </QList>
 
+    <div
+      class="text-caption text-center q-mx-md q-mb-lg"
+      :class="$q.dark.isActive ? 'text-grey-4' : 'text-grey-7'"
+    >
+      Сравниваются встроенные функции. «—» — функция не заявлена как встроенная.
+    </div>
+
     <h2
       :class="{
-        'text-center q-ma-md': $q.platform.is.desktop,
-        'q-pl-md q-pr-md': !$q.platform.is.desktop,
+        'text-center q-ma-md': $q.screen.gt.sm,
+        'q-pl-md q-pr-md': !$q.screen.gt.sm,
       }"
     >
       Открытые стандарты и децентрализация
@@ -685,68 +642,65 @@
 
     <div
       class="flex justify-center"
-      :class="{ row: $q.platform.is.desktop }"
+      :class="{ row: $q.screen.gt.sm }"
     >
       <QCard
         class="q-ma-md col-3"
-        :bordered="$q.platform.is.desktop"
+        :bordered="$q.screen.gt.sm"
         flat
       >
         <QCardSection>
-          <div class="row items-center q-gutter-sm q-mb-sm">
+          <div class="row items-center no-wrap q-gutter-sm q-mb-sm">
             <QIcon
               name="calendar_month"
-              color="accent"
+              :color="promoAccentColor"
               size="sm"
             />
-            <div class="text-h6">Классический веб</div>
+            <div class="text-h6">Календари</div>
           </div>
           <div class="text-subtitle2 text-weight-bold"> iCalendar </div>
           <div class="text-subtitle2">
-            Хранение данных в текстовом формате — совместимо с Google Calendar,
-            Apple Calendar и любым другим клиентом.
+            Экспорт и подписка для совместимых календарных приложений.
           </div>
         </QCardSection>
       </QCard>
       <QCard
         class="q-ma-md col-3"
-        :bordered="$q.platform.is.desktop"
+        :bordered="$q.screen.gt.sm"
         flat
       >
         <QCardSection>
           <div class="row items-center q-gutter-sm q-mb-sm">
             <QIcon
               name="schema"
-              color="accent"
+              :color="promoAccentColor"
               size="sm"
             />
-            <div class="text-h6">Семантический веб</div>
+            <div class="text-h6">Связанные данные</div>
           </div>
           <div class="text-subtitle2 text-weight-bold"> JSON-LD </div>
           <div class="text-subtitle2">
-            Хранение данных в базе знаний — задачи понимают машины, а не только
-            люди.
+            События сохраняются в формате для серверной базы знаний.
           </div>
         </QCardSection>
       </QCard>
       <QCard
         class="q-ma-md col-3"
-        :bordered="$q.platform.is.desktop"
+        :bordered="$q.screen.gt.sm"
         flat
       >
         <QCardSection>
-          <div class="row items-center q-gutter-sm q-mb-sm">
+          <div class="row items-center no-wrap q-gutter-sm q-mb-sm">
             <QIcon
               name="hub"
-              color="accent"
+              :color="promoAccentColor"
               size="sm"
             />
             <div class="text-h6">Децентрализованный социальный веб</div>
           </div>
-          <div class="text-subtitle2 text-weight-bold"> Fediverse </div>
+          <div class="text-subtitle2 text-weight-bold"> ActivityPub </div>
           <div class="text-subtitle2">
-            Хранение данных децентрализованно — ваши задачи не заперты внутри
-            одного сервиса.
+            Сервер принимает и публикует события через Inbox и Outbox.
           </div>
         </QCardSection>
       </QCard>
@@ -755,8 +709,8 @@
     <QBanner
       class="q-ma-md bg-accent text-white rounded-borders"
       :style="{
-        marginLeft: $q.platform.is.desktop ? 'calc(50vw / 4)' : null,
-        marginRight: $q.platform.is.desktop ? 'calc(50vw / 4)' : null,
+        marginLeft: $q.screen.gt.sm ? 'calc(50vw / 4)' : null,
+        marginRight: $q.screen.gt.sm ? 'calc(50vw / 4)' : null,
       }"
       rounded
     >
@@ -766,74 +720,70 @@
           color="white"
         />
       </template>
-      Система, где задачи «летают» между разными людьми и ботами
+      Открытые протоколы упрощают обмен событиями между совместимыми сервисами.
     </QBanner>
 
     <QList
-      :padding="$q.platform.is.desktop"
+      :padding="$q.screen.gt.sm"
       class="q-mb-md"
       :style="{
-        marginLeft: $q.platform.is.desktop ? 'calc(50vw / 4)' : null,
-        marginRight: $q.platform.is.desktop ? 'calc(50vw / 4)' : null,
+        marginLeft: $q.screen.gt.sm ? 'calc(50vw / 4)' : null,
+        marginRight: $q.screen.gt.sm ? 'calc(50vw / 4)' : null,
       }"
     >
       <QItem>
         <QItemSection avatar>
           <QIcon
-            color="accent"
+            :color="promoAccentColor"
             name="electrical_services"
           />
         </QItemSection>
         <QItemSection>
-          <QItemLabel>Подключение любых MCP клиентов</QItemLabel>
+          <QItemLabel>Совместимые MCP-клиенты, включая Codex</QItemLabel>
         </QItemSection>
       </QItem>
       <QItem>
         <QItemSection avatar>
           <QIcon
-            color="accent"
+            :color="promoAccentColor"
             name="hub"
           />
         </QItemSection>
         <QItemSection>
-          <QItemLabel>
-            Список задач не заперт внутри бота — используется мощь Fediverse
-          </QItemLabel>
+          <QItemLabel>ActivityPub Inbox и Outbox</QItemLabel>
         </QItemSection>
       </QItem>
       <QItem>
         <QItemSection avatar>
           <QIcon
-            color="accent"
+            :color="promoAccentColor"
             name="event"
           />
         </QItemSection>
         <QItemSection>
-          <QItemLabel>Единый стандарт данных iCal</QItemLabel>
+          <QItemLabel>Экспорт и подписка iCalendar</QItemLabel>
         </QItemSection>
       </QItem>
       <QItem>
         <QItemSection avatar>
           <QIcon
-            color="accent"
+            :color="promoAccentColor"
             name="verified"
           />
         </QItemSection>
         <QItemSection>
-          <QItemLabel>
-            Корпоративная безопасность с использованием Verifiable Credentials
-          </QItemLabel>
+          <QItemLabel>Verifiable Credentials для федерации</QItemLabel>
         </QItemSection>
       </QItem>
       <QItem>
         <QItemSection avatar>
           <QIcon
-            color="accent"
-            name="history"
+            :color="promoAccentColor"
+            name="cloud"
           />
         </QItemSection>
         <QItemSection>
-          <QItemLabel>Прозрачная история действий (Outbox)</QItemLabel>
+          <QItemLabel>Подключение собственного Solid Pod</QItemLabel>
         </QItemSection>
       </QItem>
     </QList>
@@ -845,30 +795,30 @@
         'bg-grey-9 text-white': $q.dark.isActive,
       }"
       :style="{
-        marginLeft: $q.platform.is.desktop ? 'calc(50vw / 4)' : null,
-        marginRight: $q.platform.is.desktop ? 'calc(50vw / 4)' : null,
+        marginLeft: $q.screen.gt.sm ? 'calc(50vw / 4)' : null,
+        marginRight: $q.screen.gt.sm ? 'calc(50vw / 4)' : null,
       }"
       rounded
     >
       <template #avatar>
         <QIcon
           name="lock"
-          color="accent"
+          :color="promoAccentColor"
         />
       </template>
       <div class="text-subtitle1 text-weight-bold q-mb-xs">
         Нужна корпоративная безопасность?
       </div>
       <div class="text-subtitle2">
-        Вы можете приобрести Секретаря и развернуть его на собственном сервере —
-        полный контроль над данными без зависимости от внешней инфраструктуры.
+        Self-hosted в Alpha: setup-файл за 20 000 ₽. Сервер, ключ и расходы ИИ —
+        на стороне клиента.
       </div>
       <template #action>
         <QBtn
           flat
-          color="accent"
-          label="Подключиться"
-          @click="registerPage"
+          :color="promoAccentColor"
+          label="Связаться"
+          href="mailto:v-secretary@mail.ru?subject=SELF%20Hosted"
         />
       </template>
     </QBanner>
@@ -877,49 +827,19 @@
 
     <h2
       :class="{
-        'text-center q-ma-md': $q.platform.is.desktop,
-        'q-pl-md q-pr-md': !$q.platform.is.desktop,
+        'text-center q-ma-md': $q.screen.gt.sm,
+        'q-pl-md q-pr-md': !$q.screen.gt.sm,
       }"
     >
       Цены
     </h2>
-    <div class="flex justify-center full-width q-mb-md">
-      <QCard
-        flat
-        class="q-ma-xs full-width"
-        :style="{
-          paddingLeft: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
-          paddingRight: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
-        }"
-      >
-        <QCardSection>
-          <ul>
-            <li><b>Три события в месяц</b> бесплатно в одном сообществе</li>
-            <li>
-              <b>White label решение:</b> 50к разово + поддержка за каждый тикет
-            </li>
-            <li>
-              <b>Self-hosted решение:</b> 20к за setup файл
-              <ul>
-                <li>Клиент покупает ключ</li>
-                <li
-                  >Клиент сам платит за расход ИИ и сам организует себе
-                  сервер.</li
-                >
-              </ul>
-            </li>
-          </ul>
-        </QCardSection>
-      </QCard>
-    </div>
-
     <QCard flat>
       <!--  AND location !== RU-->
       <PricingComponent
         class="fit"
         :class="{
-          'row q-pa-md q-gutter-md': $q.platform.is.desktop,
-          'q-gutter-xs': !$q.platform.is.desktop,
+          'row q-pa-md q-gutter-md': $q.screen.gt.sm,
+          'q-gutter-xs': !$q.screen.gt.sm,
         }"
       />
     </QCard>
@@ -927,107 +847,96 @@
     <QTimeline class="q-mt-md q-mb-md q-pl-md q-pr-md">
       <h2
         :class="{
-          'text-center': $q.platform.is.desktop,
-          'q-pl-md q-pr-md': !$q.platform.is.desktop,
+          'text-center': $q.screen.gt.sm,
+          'q-pl-md q-pr-md': !$q.screen.gt.sm,
         }"
       >
-        Как это работает
+        Как это работает в Codex
       </h2>
       <h3 class="text-subtitle1 text-center">
-        Автоматизация стадий организации, планирования и управления временем
+        Четыре шага до события в календаре
       </h3>
       <div
         :style="{
-          marginLeft: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
-          marginRight: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
+          marginLeft: $q.screen.gt.sm ? 'calc(50vw / 2)' : null,
+          marginRight: $q.screen.gt.sm ? 'calc(50vw / 2)' : null,
         }"
       >
         <QTimelineEntry
-          title="Авторизация Telegram"
+          title="Подключите Секретаря"
           subtitle="Шаг 1"
-          color="accent"
-          icon="key"
+          :color="promoAccentColor"
+          icon="electrical_services"
           class="text-left"
         >
-          <div>Авторизуйте свой аккаунт через Telegram.</div>
+          <div>Добавьте MCP endpoint в Codex.</div>
         </QTimelineEntry>
         <QTimelineEntry
-          title="Установка Web Id"
+          title="Сформулируйте запрос"
           subtitle="Шаг 2"
-          color="accent"
-          icon="memory"
+          :color="promoAccentColor"
+          icon="chat"
           class="text-left"
         >
-          <div>
-            Выберите свой Solid Pod сервер где вы будете хранить свои документы.
-          </div>
+          <div>Опишите задачу или встречу обычным языком.</div>
         </QTimelineEntry>
         <QTimelineEntry
-          title="Электронная подпись Ed25519"
+          title="Проверьте форму"
           subtitle="Шаг 3"
-          color="accent"
-          icon="done_outline"
+          :color="promoAccentColor"
+          icon="fact_check"
           class="text-left"
         >
-          <div>
-            Загрузите или сгенерируйте свою электронную подпись Ed25519.
-          </div>
+          <div>Секретарь проверит занятость и покажет форму.</div>
         </QTimelineEntry>
         <QTimelineEntry
-          title="Сформируйте обязательство"
+          title="Подтвердите создание"
           subtitle="Шаг 4"
-          color="positive"
-          icon="done_all"
+          color="green-8"
+          icon="event_available"
           class="text-left"
         >
-          <div>
-            Общайтесь с Секретарем и формируйте файлы договора и создавайте
-            маршруты его подписания с агентами.
-          </div>
+          <div>Подтвердите — событие появится в календаре.</div>
         </QTimelineEntry>
       </div>
     </QTimeline>
 
     <h3
       :class="{
-        'text-center': $q.platform.is.desktop,
-        'q-pl-md q-pr-md': !$q.platform.is.desktop,
+        'text-center': $q.screen.gt.sm,
+        'q-pl-md q-pr-md': !$q.screen.gt.sm,
       }"
     >
       Часто задаваемые вопросы
     </h3>
     <QList
-      :padding="$q.platform.is.desktop"
+      :padding="$q.screen.gt.sm"
       class="q-mb-xl rounded-borders text-left"
       :style="{
-        marginLeft: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
-        marginRight: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
+        marginLeft: $q.screen.gt.sm ? 'calc(50vw / 2)' : null,
+        marginRight: $q.screen.gt.sm ? 'calc(50vw / 2)' : null,
       }"
     >
       <QExpansionItem
         expand-separator
         label="Как вы обеспечиваете безопасность данных?"
-        caption="Данные не хранятся на сервере"
+        caption="Локальное и внешнее хранение"
       >
         <QCard>
           <QCardSection class="text-left">
-            Виртуальный секретарь использует современные методы шифрования при
-            передаче данных. Данные не хранятся на сервере Виртуального
-            секретаря, а хранятся на вашем устройстве или вашем Solid Pod
-            сервере.
+            Данные хранятся на устройстве или в подключённом Solid Pod. Для
+            Telegram и синхронизации часть данных обрабатывает сервер.
           </QCardSection>
         </QCard>
       </QExpansionItem>
       <QExpansionItem
         expand-separator
-        label="В каком формате хранятся обязательства?"
-        caption="Verifiable Credentials Activity Streams Presentation"
+        label="В каком формате можно экспортировать события?"
+        caption="iCalendar"
       >
         <QCard>
           <QCardSection class="text-left">
-            Все обязательства подписываются вашим ключом Verifiable Credentials
-            и хранятся в формате JSON-LD. Вы можете в любой момент их
-            экспортировать в формат iCalendar.
+            В iCalendar — для добавления в совместимые приложения.
           </QCardSection>
         </QCard>
       </QExpansionItem>
@@ -1038,11 +947,8 @@
       >
         <QCard>
           <QCardSection class="text-left">
-            В «Мои договора» можно подписывать договоры выполненных работ и
-            оказания услуг, акты приемки и накладные, дополнительные соглашения
-            и приложения к ним, письма, платежные поручения, счета и технические
-            задания, доверенности, и любые другие документы, для которых по
-            закону достаточно усиленной неквалифицированной подписи и т.д.
+            Да. Событие можно открыть в Google Calendar или экспортировать в
+            iCalendar.
           </QCardSection>
         </QCard>
       </QExpansionItem>
@@ -1053,52 +959,33 @@
       >
         <QCard>
           <QCardSection class="text-left">
-            Да. Секретарь доступен как self-hosted решение — вы получаете полный
-            контроль над данными и инфраструктурой. Обратитесь в поддержку для
-            получения дистрибутива и инструкции по установке.
+            Да, версия Alpha. Setup-файл стоит 20 000 ₽; сервер, ключ и расходы
+            ИИ оплачивает клиент.
           </QCardSection>
         </QCard>
       </QExpansionItem>
       <QExpansionItem
         expand-separator
-        label="Что такое Fediverse и зачем это нужно?"
-        caption="ActivityPub / децентрализация"
+        label="Для чего нужен ActivityPub?"
+        caption="Федерация"
       >
         <QCard>
           <QCardSection class="text-left">
-            Fediverse — это сеть децентрализованных сервисов, работающих по
-            протоколу ActivityPub. Секретарь использует его, чтобы ваши задачи
-            могли «перетекать» между разными приложениями и ботами без привязки
-            к одному вендору.
+            Секретарь принимает и публикует события через ActivityPub Inbox и
+            Outbox. Обмен работает с совместимыми сервисами.
           </QCardSection>
         </QCard>
       </QExpansionItem>
     </QList>
     <QList
-      :padding="$q.platform.is.desktop"
+      :padding="$q.screen.gt.sm"
       class="bg-grey-9 text-white"
       :style="{
-        paddingLeft: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
-        paddingRight: $q.platform.is.desktop ? 'calc(50vw / 2)' : null,
+        paddingLeft: $q.screen.gt.sm ? 'calc(50vw / 2)' : null,
+        paddingRight: $q.screen.gt.sm ? 'calc(50vw / 2)' : null,
       }"
       dark
     >
-      <QItemLabel
-        header
-        class="text-center"
-      >
-        ООО "Виртуальный секретарь"
-      </QItemLabel>
-      <QItemLabel
-        caption
-        class="text-center text-uppercase"
-      >
-        ИНН 2632123201
-      </QItemLabel>
-      <QSeparator
-        spaced
-        dark
-      />
       <QItem
         v-ripple
         clickable
@@ -1130,6 +1017,22 @@
           </QItemLabel>
         </QCardSection>
       </QItem>
+      <QSeparator
+        spaced
+        dark
+      />
+      <QItemLabel
+        header
+        class="text-center"
+      >
+        ООО "Виртуальный секретарь"
+      </QItemLabel>
+      <QItemLabel
+        caption
+        class="text-center text-uppercase"
+      >
+        ИНН 2632123201
+      </QItemLabel>
     </QList>
   </QScrollArea>
 </template>
@@ -1154,13 +1057,17 @@ import {
   QList,
   QMarkupTable,
   QBanner,
+  QParallax,
+  QScrollObserver,
 } from 'quasar'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import useLangStore from '@/shared/model/lang'
 import PricingComponent from './PricingComponent.vue'
 import { ROUTE_NAMES } from '@/shared/config/routes'
 import { GOOGLE_PLAY_URL } from '@/shared/lib/googlePlayHelper'
+import { CODEX_APP_URL } from '@/shared/lib/codexHelper'
 import { TELEGRAM_BOT_NAME } from '@/shared/lib/telegram'
 import { open } from '@/shared/lib/urlHelper'
 import pkg from '../../../../package.json'
@@ -1170,6 +1077,13 @@ const i18n = useI18n()
 const langStore = useLangStore()
 const $t = i18n.t
 const $q = useQuasar()
+const promoAccentColor = computed(() =>
+  $q.dark.isActive ? 'purple-3' : 'accent',
+)
+const emit = defineEmits<{
+  headerConnectVisibility: [visible: boolean]
+  connectRequest: []
+}>()
 
 const metaData = {
   'title': $t('pages.welcome.title'),
@@ -1183,6 +1097,14 @@ function registerPage() {
   })
 }
 
+function openConnectDialog() {
+  emit('connectRequest')
+}
+
+function openCodexApp() {
+  open(CODEX_APP_URL)
+}
+
 function supportPage() {
   const [{ email }] = pkg.contributors
   open(`mailto:${email}?subject=SUPPORT`)
@@ -1192,5 +1114,44 @@ function privacyPage() {
   return router.push({ name: ROUTE_NAMES.PRIVACY })
 }
 
+function onPromoScroll({ position }: { position: { top: number } }) {
+  const secondScreenOffset = $q.screen.gt.sm ? 540 : 640
+  emit('headerConnectVisibility', position.top >= secondScreenOffset)
+}
+
 useMeta(metaData)
 </script>
+<style scoped>
+.promo-hero :deep(.q-parallax__content) {
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.promo-hero-media {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 100%;
+  height: 145%;
+  background:
+    radial-gradient(circle at 20% 25%, rgb(255 255 255 / 18%), transparent 38%),
+    radial-gradient(circle at 80% 70%, rgb(255 255 255 / 12%), transparent 35%),
+    var(--q-accent);
+  will-change: transform;
+}
+
+.promo-hero-media::after {
+  position: absolute;
+  inset: 10% 20%;
+  background: url('/icons/safari-pinned-tab.svg') center / contain no-repeat;
+  content: '';
+  filter: invert(1);
+  opacity: 0.08;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-hero-media {
+    transform: translate3d(-50%, 0, 0) !important;
+  }
+}
+</style>
