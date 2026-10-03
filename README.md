@@ -52,7 +52,7 @@
 
 ### Установка из исходников
 ```bash
-git clone git@github.com:gotois/secretary-web.git && cd secretary-web
+git clone git@github.com:gotois/secretary-app.git && cd secretary-app
 npm i
 ```
 
@@ -115,7 +115,7 @@ npm run test:mcp-app
 
 `npm run build` также собирает MCP artifact и копирует его в `dist/pwa/mcp`.
 Для публикации задайте `VITE_MCP_ASSET_BASE=https://<app-host>/mcp/` либо
-`APP_URL=https://<app-host>`. Web получает готовый `/mcp/index.html` с этого
+`APP_URL=https://<app-host>`. Core получает готовый `/mcp/index.html` с этого
 хоста без изменений HTML. Static hosting отдаёт 404 для отсутствующего MCP
 artifact вместо PWA fallback; module assets доступны с CORS. Не удаляйте assets
 предыдущей версии первые десять минут после публикации.

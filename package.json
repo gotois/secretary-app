@@ -12,10 +12,10 @@
   "publisher": "GIC DAO",
   "homepage": "https://archive.gotointeractive.com/",
   "bugs": {
-    "url": "https://github.com/gotois/secretary-web/issues",
+    "url": "https://github.com/gotois/secretary-app/issues",
     "email": "baskovsky@yandex.ru"
   },
-  "repository": "github:gotois/secretary-web",
+  "repository": "github:gotois/secretary-app",
   "productName": "Secretary",
   "author": {
     "name": "Denis Baskovsky",

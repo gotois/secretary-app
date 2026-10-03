@@ -232,8 +232,8 @@ export default {
       body:
         'Мы хотим убедить вас в том, что наш сервис не собирает никакую вашу персональную информацию. Мы ценим вашу конфиденциальность и уделяем большое внимание защите ваших данных.' +
         '<br><br>Наше приложение распространяется "как есть", без каких-либо гарантий или обязательств. Мы приложим все усилия, чтобы обеспечить его работоспособность и безопасность, но мы не несем ответственности за возможные ошибки или проблемы, возникающие при его использовании.' +
-        '<br><br>[Исходный код приложения](https://github.com/gotois/secretary-web) распространяется в соответствии с лицензией:' +
-        '<br>[GNU General Public License v3.0](https://github.com/gotois/secretary-web/blob/master/LICENSE). [Используемые OpenSource библиотеки](https://app.fossa.com/projects/git%2Bgithub.com%2Fgotois%2Fsecretary-web).' +
+        '<br><br>[Исходный код приложения](https://github.com/gotois/secretary-app) распространяется в соответствии с лицензией:' +
+        '<br>[GNU General Public License v3.0](https://github.com/gotois/secretary-app/blob/master/LICENSE). [Используемые OpenSource библиотеки](https://app.fossa.com/projects/git%2Bgithub.com%2Fgotois%2Fsecretary-web).' +
         '<br><br>Текст полного пользовательского соглашения доступен по ссылке: [Пользовательское соглашение](https://archive.gotointeractive.com/privacy). Мы рекомендуем вам внимательно прочитать его, чтобы полностью понять условия использования нашего сервиса.',
     },
     wallet: {
