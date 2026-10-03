@@ -5,6 +5,11 @@
     :dark="!$q.dark.isActive"
     bordered
     square
+    :tabindex="readOnly ? 0 : undefined"
+    :role="readOnly ? 'button' : undefined"
+    :aria-label="title"
+    @keydown.enter.prevent="popup?.show()"
+    @keydown.space.prevent="popup?.show()"
   >
     <QCardSection
       class="q-pa-xs justify-between items-center items-baseline"
@@ -23,9 +28,9 @@
       </div>
       <div class="text-caption text-red ellipsis">
         ⏰
-        {{ date.formatDate(convertTemporalToDate(start), 'HH:mm') }}
+        {{ formatTime(start) }}
         -
-        {{ date.formatDate(convertTemporalToDate(end), 'HH:mm') }}
+        {{ formatTime(end) }}
       </div>
       <div
         v-if="location"
@@ -46,8 +51,22 @@
         {{ participant.map((item) => item.name).join(', ') }}
       </div>
     </QCardSection>
-    <QPopupProxy>
+    <QPopupProxy ref="popup">
+      <TaskDetails
+        v-if="readOnly"
+        :title="title"
+        :description="description || ''"
+        :location="location"
+        :start-time="eventDate(start)"
+        :end-time="eventDate(end)"
+        :timezone="timezone"
+        :locale="locale"
+        show-time
+        plain-description
+        style="width: min(640px, 90vw)"
+      />
       <TaskFull
+        v-else
         :style="{
           width: $q.platform.is.desktop ? '640px' : '320px',
         }"
@@ -55,8 +74,8 @@
         :title="title"
         :description="description"
         :attaches="attaches"
-        :start-time="convertTemporalToDate(start)"
-        :end-time="convertTemporalToDate(end)"
+        :start-time="eventDate(start)"
+        :end-time="eventDate(end)"
         :tag="tag"
         :same-as="''"
         :location="location"
@@ -70,27 +89,32 @@
   </QCard>
 </template>
 <script lang="ts" setup>
-import { PropType } from 'vue'
+import { defineAsyncComponent, ref, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { QCard, QCardSection, QPopupProxy, date, useQuasar } from 'quasar'
+import { QCard, QCardSection, QPopupProxy, useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
-import TaskFull from './TaskFull.vue'
-import { useEventStore } from '@/features/event-editor'
+import TaskDetails from './TaskDetails.vue'
+const TaskFull = defineAsyncComponent(() => import('./TaskFull.vue'))
 import type { Agent } from '@/shared/model/contact'
 import type { FormatImageType } from '@/shared/model/media'
-import { convertTemporalToDate } from '@/shared/lib/dateHelper'
 import { ROUTE_NAMES } from '@/shared/config/routes'
 
 const $q = useQuasar()
 const i18n = useI18n()
 const router = useRouter()
-const eventStore = useEventStore()
 
 const $t = i18n.t
 
 const emit = defineEmits(['remove'])
 
+const popup = ref<InstanceType<typeof QPopupProxy>>()
 const props = defineProps({
+  readOnly: { type: Boolean, default: false },
+  timezone: {
+    type: String,
+    default: () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+  },
+  locale: { type: String, default: () => navigator.language },
   horizontal: {
     type: Boolean as PropType<boolean>,
     default: false,
@@ -104,11 +128,11 @@ const props = defineProps({
     required: true,
   },
   start: {
-    type: Object as PropType<Temporal.ZonedDateTime>,
+    type: Object as PropType<Temporal.PlainDate | Temporal.ZonedDateTime>,
     required: true,
   },
   end: {
-    type: Object as PropType<Temporal.ZonedDateTime>,
+    type: Object as PropType<Temporal.PlainDate | Temporal.ZonedDateTime>,
     required: true,
   },
   location: {
@@ -141,7 +165,25 @@ const props = defineProps({
   },
 })
 
+function eventDate(value: Temporal.PlainDate | Temporal.ZonedDateTime): Date {
+  return new Date(
+    'epochMilliseconds' in value
+      ? value.epochMilliseconds
+      : value.toZonedDateTime(props.timezone).epochMilliseconds,
+  )
+}
+function formatTime(
+  value: Temporal.PlainDate | Temporal.ZonedDateTime,
+): string {
+  return new Intl.DateTimeFormat(props.locale, {
+    timeZone: props.timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(eventDate(value))
+}
 function onEdit() {
+  if (props.readOnly) return
   void router.push({
     name: ROUTE_NAMES.EDIT,
     params: { taskId: props.eventId },
@@ -149,6 +191,7 @@ function onEdit() {
 }
 
 function onRemove() {
+  if (props.readOnly) return
   $q.notify({
     message: $t('contract.removeDialog.message'),
     type: 'negative',
@@ -167,7 +210,8 @@ function onRemove() {
         color: 'white',
         async handler() {
           try {
-            await eventStore.deleteEvent({ uid_tasks: [props.eventId] })
+            const { useEventStore } = await import('@/features/event-editor')
+            await useEventStore().deleteEvent({ uid_tasks: [props.eventId] })
             emit('remove')
           } catch (error) {
             console.error(error)

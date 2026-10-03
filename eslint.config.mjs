@@ -51,6 +51,7 @@ export default [
       },
       globals: {
         ...globals.browser,
+        Temporal: 'readonly',
         __statics: 'readonly',
         __QUASAR_SSR__: 'readonly',
         __QUASAR_SSR_SERVER__: 'readonly',

@@ -1,9 +1,13 @@
 import { route } from 'quasar/wrappers'
-import { createAppRouter } from '@/app/router'
-import { isMcpApp } from '@/shared/lib/detector'
+import { createMemoryHistory, createRouter } from 'vue-router'
 
-export default route(() =>
-  createAppRouter({
-    sessionMode: isMcpApp.value ? 'external' : 'internal',
-  }),
-)
+export default route(async () => {
+  if (import.meta.env.MCP_APP === 'true') {
+    return createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: '/', component: { render: (): null => null } }],
+    })
+  }
+  const { createAppRouter } = await import('@/app/router')
+  return createAppRouter()
+})

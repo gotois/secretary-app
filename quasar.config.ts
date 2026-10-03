@@ -10,7 +10,29 @@ export default defineConfig((ctx: QuasarContext) => {
       quiet: true,
     })
   }
+  const mcpApp = process.env.MCP_APP === 'true'
+  const mcpAssetBase = mcpApp
+    ? new URL(
+        process.env.VITE_MCP_ASSET_BASE ||
+          new URL(
+            'mcp/',
+            `${(process.env.APP_URL || 'https://archive.gotointeractive.com').replace(/\/$/, '')}/`,
+          ).href,
+      )
+    : undefined
+  if (
+    mcpAssetBase &&
+    (!['https:', 'http:'].includes(mcpAssetBase.protocol) ||
+      !mcpAssetBase.pathname.endsWith('/') ||
+      mcpAssetBase.search ||
+      mcpAssetBase.hash)
+  ) {
+    throw new Error(
+      'VITE_MCP_ASSET_BASE must be an HTTP(S) asset directory ending in /',
+    )
+  }
   return {
+    htmlVariables: { mcpApp },
     eslint: {
       fix: !ctx.prod,
       warnings: ctx.prod,
@@ -31,15 +53,16 @@ export default defineConfig((ctx: QuasarContext) => {
     preFetch: true,
 
     // https://v2.quasar.dev/quasar-cli/boot-files
-    boot: [
-      'mcp-app',
-      'i18n',
-      'vue-query',
-      'addressbar-color',
-      'geo',
-      'tg-mini-app',
-      'webpush',
-    ],
+    boot: mcpApp
+      ? ['i18n']
+      : [
+          'i18n',
+          'vue-query',
+          'addressbar-color',
+          'geo',
+          'tg-mini-app',
+          'webpush',
+        ],
 
     // https://github.com/quasarframework/quasar/tree/dev/extras
     extras: [
@@ -60,6 +83,7 @@ export default defineConfig((ctx: QuasarContext) => {
       },
       vueOptionsAPI: true,
       defineEnv: {
+        MCP_APP: String(mcpApp),
         secretary: process.env.SECRETARY_HOST,
         server: process.env.SERVER_HOST,
         telegram_bot_name: process.env.TELEGRAM_BOT_NAME,
@@ -79,7 +103,8 @@ export default defineConfig((ctx: QuasarContext) => {
       lib: 'es',
       reportCompressedSize: ctx.prod,
       vueRouterMode: 'history',
-      publicPath: '/',
+      publicPath: mcpAssetBase && ctx.prod ? mcpAssetBase.href : '/',
+      ...(mcpApp ? { distDir: 'dist/mcp' } : {}),
       rebuildCache: true,
       rtl: false,
       showProgress: true,
@@ -99,7 +124,7 @@ export default defineConfig((ctx: QuasarContext) => {
             ? [new URL(process.env.APP_URL).hostname]
             : [],
           port: 8080,
-          open: !process.env.TURBO_HASH, // opens browser window automatically
+          open: !mcpApp && !process.env.TURBO_HASH, // opens browser window automatically
         }
       : {},
     // https://v2.quasar.dev/quasar-cli/quasar-conf-js#Property%3A-framework

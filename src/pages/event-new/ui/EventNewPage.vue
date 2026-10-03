@@ -14,6 +14,17 @@
         }"
         class="q-pa-md q-ml-auto q-mr-auto q-mt-md q-mb-md"
       >
+        <div class="row justify-end q-mb-sm">
+          <QBtn
+            flat
+            round
+            dense
+            icon="close"
+            :aria-label="$t('duration.close')"
+            :to="{ name: ROUTE_NAMES.CALENDAR }"
+            replace
+          />
+        </div>
         <CalendarEventFormComponent
           ref="formRef"
           :task="emptyTask"
@@ -32,6 +43,7 @@ import {
   useMeta,
   QPage,
   QCard,
+  QBtn,
   QScrollArea,
   QSkeleton,
 } from 'quasar'
@@ -39,9 +51,7 @@ import { useI18n } from 'vue-i18n'
 import { mainButton, postEvent } from '@tma.js/sdk'
 import { useRouter } from 'vue-router'
 import { ROUTE_NAMES } from '@/shared/config/routes'
-import { isMcpApp, isTMA } from '@/shared/lib/detector'
-import { useEventStore } from '@/features/event-editor'
-import { useHostBridge } from '@/shared/lib/mcp/hostBridge'
+import { isTMA } from '@/shared/lib/detector'
 
 const CalendarEventFormComponent = defineAsyncComponent({
   loader: () => import('@/features/event-editor'),
@@ -52,8 +62,6 @@ const CalendarEventFormComponent = defineAsyncComponent({
 const $q = useQuasar()
 const $t = useI18n().t
 const router = useRouter()
-const eventStore = useEventStore()
-const bridge = useHostBridge()
 const formRef = ref<{ submit: () => Promise<void> } | null>(null)
 
 interface EmptyTask {
@@ -69,17 +77,7 @@ interface EmptyTask {
 }
 
 function _now() {
-  if (!isMcpApp.value) {
-    const d = new Date()
-    d.setSeconds(0, 0)
-    return d.toISOString()
-  }
-  // todo зачем здесь подключается целый store для этого непонятно
-  eventStore.applyMcpContent()
-  const date = eventStore.mcpSelectedDate
-  const d = new Date(
-    `${date}T${String(new Date().getHours()).padStart(2, '0')}:00:00`,
-  )
+  const d = new Date()
   d.setSeconds(0, 0)
   return d.toISOString()
 }
@@ -105,10 +103,6 @@ const emptyTask: EmptyTask = {
 
 async function onSaved() {
   $q.notify({ type: 'positive', message: $t('pages.calendar.title') })
-  if (isMcpApp.value) {
-    await bridge.requestClose()
-    return
-  }
   await router.replace({ name: ROUTE_NAMES.CALENDAR })
 }
 

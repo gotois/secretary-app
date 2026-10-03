@@ -1,5 +1,4 @@
 import { shallowMount } from '@vue/test-utils'
-import { Temporal } from '@js-temporal/polyfill'
 import { describe, expect, test, vi } from 'vitest'
 
 const eventStoreMock = vi.hoisted(() => ({
@@ -41,10 +40,10 @@ describe('CalendarEventCard', () => {
         title: 'Встреча',
         start: Temporal.ZonedDateTime.from(
           '2026-08-14T09:00:00+03:00[Europe/Moscow]',
-        ) as unknown as globalThis.Temporal.ZonedDateTime,
+        ),
         end: Temporal.ZonedDateTime.from(
           '2026-08-14T10:00:00+03:00[Europe/Moscow]',
-        ) as unknown as globalThis.Temporal.ZonedDateTime,
+        ),
       },
       global: {
         stubs: {

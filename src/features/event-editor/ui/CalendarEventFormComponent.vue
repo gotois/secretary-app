@@ -265,12 +265,6 @@
           clearable
           emit-value
           map-options
-          :disable="isMcpApp"
-          :hint="
-            isMcpApp
-              ? 'Напоминания пока доступны только в Telegram Mini App'
-              : undefined
-          "
           :dense="$q.platform.is.desktop"
         >
           <template #prepend>
@@ -293,7 +287,6 @@
           :dense="$q.platform.is.desktop"
         />
         <QSelect
-          v-if="isTMA || isMcpApp"
           v-model="form.target"
           :options="targetOptions"
           label="Кому"
@@ -306,12 +299,6 @@
           clearable
           behavior="menu"
           :loading="targetLoading"
-          :disable="isMcpApp"
-          :hint="
-            isMcpApp
-              ? 'Получатель Telegram доступен только в Mini App'
-              : undefined
-          "
           :dense="$q.platform.is.desktop"
           @filter="filterTargets"
           @clear="form.target = [ownTarget]"
@@ -386,7 +373,7 @@ import {
   QMenu,
 } from 'quasar'
 import { useRouter, useRoute } from 'vue-router'
-import { isMcpApp, isTMA } from '@/shared/lib/detector'
+import { isTMA } from '@/shared/lib/detector'
 import useEventStore from '../model/store'
 import { prettyDate, toDatetimeLocal } from '@/shared/lib/dateHelper'
 import { ROUTE_NAMES } from '@/shared/config/routes'
@@ -405,6 +392,9 @@ interface TaskObject {
   location?: string | null
   link_meeting?: string | null
   priority?: number
+  id_category?: number
+  id_cal_class?: number
+  estimated_unix_time?: number
   notification_date_time?: string | null
   remind_before?: number | null
 }
@@ -422,7 +412,7 @@ interface TargetOption {
 const props = defineProps<{
   task: TaskObject
   readonly: boolean
-  taskId: null | number
+  taskId: null | number | string
 }>()
 const emit = defineEmits<{
   (e: 'saved'): void
@@ -515,9 +505,6 @@ async function filterTargets(
   value: string,
   update: (callback: () => void) => void,
 ) {
-  if (isMcpApp.value) {
-    return
-  }
   const query = value.trim()
 
   if (!query) {
@@ -601,6 +588,9 @@ async function onSave(): Promise<void> {
       return
     }
     await eventStore.createEvent({
+      id_category: props.task.id_category,
+      id_cal_class: props.task.id_cal_class,
+      estimated_unix_time: props.task.estimated_unix_time,
       name: form.name,
       description: form.description || undefined,
       start_date: new Date(form.start_date),
@@ -631,11 +621,14 @@ async function onEdit(): Promise<void> {
   }
   saving.value = true
   try {
+    const startDate = new Date(form.start_date)
     await eventStore.editEvent({
-      id_task: Number(props.taskId),
+      ...(typeof props.taskId === 'string' && !/^\d+$/.test(props.taskId)
+        ? { uid_task: props.taskId }
+        : { id_task: Number(props.taskId) }),
       name: form.name,
       description: form.description || undefined,
-      start_date: new Date(form.start_date),
+      start_date: startDate,
       end_date: form.end_date ? new Date(form.end_date) : undefined,
       location: form.location || undefined,
       link_meeting: form.link_meeting || undefined,
@@ -644,6 +637,10 @@ async function onEdit(): Promise<void> {
       target: form.target.map((target) => target.value),
     })
     emit('saved')
+    await router.replace({
+      name: ROUTE_NAMES.CALENDAR,
+      hash: '#' + Temporal.Instant.from(startDate.toISOString()).toString(),
+    })
   } catch (error: unknown) {
     console.error(error)
     $q.notify({

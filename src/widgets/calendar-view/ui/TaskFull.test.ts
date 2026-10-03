@@ -47,6 +47,10 @@ describe('TaskFull', () => {
       },
       global: {
         stubs: {
+          TaskDetails: {
+            template:
+              '<section><slot name="actions" /><slot name="tags" /></section>',
+          },
           QBtn: {
             emits: ['click'],
             template: '<button @click="$emit(\'click\')"><slot /></button>',

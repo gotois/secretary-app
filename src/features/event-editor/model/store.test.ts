@@ -14,11 +14,6 @@ vi.mock('@/shared/model/geo', () => ({
   }),
 }))
 
-vi.mock('@/shared/lib/detector', async () => {
-  const { computed } = await import('vue')
-  return { isMcpApp: computed(() => false) }
-})
-
 import useEventStore from './store'
 
 describe('event store', () => {
@@ -36,6 +31,19 @@ describe('event store', () => {
     const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries')
 
     await useEventStore().createEvent({ name: 'New event' })
+
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: queryKeys.calendar.all,
+      refetchType: 'all',
+    })
+  })
+
+  test('invalidates the calendar subscription after editing an event', async () => {
+    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries')
+
+    await useEventStore().editEvent({
+      uid_task: '53454352-4554-8000-8000-00000000002a',
+    })
 
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: queryKeys.calendar.all,

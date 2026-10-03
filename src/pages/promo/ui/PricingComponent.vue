@@ -145,7 +145,6 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   useQuasar,
@@ -164,78 +163,29 @@ const basePrice = '0 RUB'
 const premiumPrice = '299 RUB'
 const vipPrice = '999 RUB'
 
-const freeSupport = ref([
+const freeDetails = [
   {
-    label: $t('pricing.free.support.title'),
-    icon: 'contact_support',
+    label: $t('pricing.free.details.title'),
+    icon: 'event_available',
+    children: [{ label: $t('pricing.free.details.values.1') }],
+  },
+]
+const premiumDetails = [
+  {
+    label: $t('pricing.premium.details.title'),
+    icon: 'branding_watermark',
+    children: [{ label: $t('pricing.premium.details.values.1') }],
+  },
+]
+const vipDetails = [
+  {
+    label: $t('pricing.vip.details.title'),
+    icon: 'dns',
     children: [
-      { label: $t('pricing.free.support.values.1') },
-      { label: $t('pricing.free.support.values.2') },
+      { label: $t('pricing.vip.details.values.1') },
+      { label: $t('pricing.vip.details.values.2') },
+      { label: $t('pricing.vip.details.values.3') },
     ],
   },
-])
-const premiumSupport = ref([
-  {
-    label: $t('pricing.premium.support.title'),
-    icon: 'contact_support',
-    children: [
-      {
-        label: $t('pricing.premium.support.values.1'),
-        children: [{ label: $t('pricing.premium.support.values.2') }],
-      },
-    ],
-  },
-])
-const vipSupport = ref([
-  {
-    label: $t('pricing.vip.support.title'),
-    icon: 'contact_support',
-    children: [
-      {
-        label: $t('pricing.vip.support.values.1'),
-        children: [
-          { label: $t('pricing.vip.support.values.2') },
-          { label: $t('pricing.vip.support.values.3') },
-        ],
-      },
-    ],
-  },
-])
-const freeFunctional = ref([
-  {
-    label: $t('pricing.free.functions.title'),
-    icon: 'shield',
-    children: [
-      { label: $t('pricing.free.functions.values.1') },
-      { label: $t('pricing.free.functions.values.2') },
-    ],
-  },
-])
-const premiumFunctional = ref([
-  {
-    label: $t('pricing.premium.functions.title'),
-    icon: 'admin_panel_settings',
-    children: [
-      {
-        label: $t('pricing.premium.functions.values.1'),
-        children: [
-          { label: $t('pricing.premium.functions.values.2') },
-          { label: $t('pricing.premium.functions.values.3') },
-        ],
-      },
-    ],
-  },
-])
-const vipFunctional = ref([
-  {
-    label: $t('pricing.vip.functions.title'),
-    icon: 'security',
-    children: [
-      {
-        label: $t('pricing.vip.functions.values.1'),
-        children: [{ label: $t('pricing.vip.functions.values.2') }],
-      },
-    ],
-  },
-])
+]
 </script>

@@ -23,7 +23,7 @@
             ref="formRef"
             :task="task as any"
             :readonly="isViewMode"
-            :task-id="Number(props.taskId)"
+            :task-id="props.taskId"
             @saved="onSaved"
             @removed="onRemoved"
           />
@@ -47,11 +47,10 @@ import {
 } from 'quasar'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { mainButton, postEvent } from '@tma.js/sdk'
+import { mainButton } from '@tma.js/sdk'
 import { ROUTE_NAMES } from '@/shared/config/routes'
 import { useEventStore } from '@/features/event-editor'
-import { isMcpApp, isTMA } from '@/shared/lib/detector'
-import { useHostBridge } from '@/shared/lib/mcp/hostBridge'
+import { isTMA } from '@/shared/lib/detector'
 
 const CalendarEventFormComponent = defineAsyncComponent({
   loader: () => import('@/features/event-editor'),
@@ -68,7 +67,6 @@ const $t = useI18n().t
 const router = useRouter()
 const route = useRoute()
 const eventStore = useEventStore()
-const bridge = useHostBridge()
 const formRef = ref<{ submit: () => Promise<void> } | null>(null)
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -103,28 +101,18 @@ async function onRefresh(done: () => void) {
   }
 }
 
-async function onSaved() {
+function onSaved() {
   $q.notify({ type: 'positive', message: 'Сохранено' })
-  if (isMcpApp.value) {
-    await bridge.requestClose()
-  }
 }
 
 async function onRemoved() {
   $q.notify({ type: 'positive', message: 'Удалено' })
-  if (isMcpApp.value) {
-    await bridge.requestClose()
-    return
-  }
   await router.push({ path: '/', replace: true })
 }
 
 onMounted(async () => {
   $q.loading.show()
   try {
-    if (isMcpApp.value) {
-      eventStore.applyMcpContent()
-    }
     task.value = await eventStore.getEvent(props.taskId)
   } catch (error: unknown) {
     console.error(error)
@@ -156,7 +144,6 @@ onMounted(() => {
   })
   mainButton.onClick(async () => {
     await formRef.value?.submit()
-    postEvent('web_app_close')
   })
 })
 </script>

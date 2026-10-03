@@ -1,10 +1,13 @@
 import { defineComponent, h } from 'vue'
-import { shallowMount } from '@vue/test-utils'
+import { flushPromises, shallowMount } from '@vue/test-utils'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
+
+const replace = vi.hoisted(() => vi.fn())
 
 const eventStoreMock = vi.hoisted(() => ({
   createEvent: vi.fn(),
   editEvent: vi.fn(),
+  getTelegramGroups: vi.fn(),
 }))
 
 vi.mock('../model/store', () => ({
@@ -12,7 +15,7 @@ vi.mock('../model/store', () => ({
 }))
 
 vi.mock('vue-router', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: vi.fn(), replace }),
   useRoute: () => ({ query: {} }),
 }))
 
@@ -23,7 +26,6 @@ vi.mock('vue-i18n', () => ({
 vi.mock('@/shared/lib/detector', async () => {
   const { computed } = await import('vue')
   return {
-    isMcpApp: computed(() => false),
     isTMA: computed(() => false),
   }
 })
@@ -70,7 +72,51 @@ const selectStub = {
 describe('CalendarEventFormComponent', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    eventStoreMock.getTelegramGroups.mockResolvedValue([])
   })
+
+  test.each([
+    [
+      '53454352-4554-8000-8000-00000000002a',
+      { uid_task: '53454352-4554-8000-8000-00000000002a' },
+    ],
+    [42, { id_task: 42 }],
+    ['42', { id_task: 42 }],
+  ])(
+    'saves an existing event with identifier %s',
+    async (taskId, identifier) => {
+      const wrapper = shallowMount(CalendarEventFormComponent, {
+        props: {
+          task: {
+            id_task: 42,
+            name: 'Встреча',
+            start_date: '2026-10-04T10:00:00.000Z',
+          },
+          readonly: false,
+          taskId,
+        },
+        global: { stubs: { QForm: formStub } },
+      })
+
+      await wrapper.find('form').trigger('submit')
+      await flushPromises()
+
+      expect(eventStoreMock.editEvent).toHaveBeenCalledOnce()
+      const payload = eventStoreMock.editEvent.mock.calls[0]![0]
+      expect(payload).toEqual(expect.objectContaining(identifier))
+      expect(payload).not.toHaveProperty(
+        'uid_task' in identifier ? 'id_task' : 'uid_task',
+      )
+      expect(wrapper.emitted('saved')).toHaveLength(1)
+      expect(wrapper.emitted('saved')![0]).toEqual([])
+      expect(replace).toHaveBeenCalledWith({
+        name: 'calendar',
+        hash:
+          '#' +
+          Temporal.Instant.from(payload.start_date.toISOString()).toString(),
+      })
+    },
+  )
 
   test('creates a new event when the form is submitted', async () => {
     const wrapper = shallowMount(CalendarEventFormComponent, {
@@ -79,6 +125,9 @@ describe('CalendarEventFormComponent', () => {
           id_task: 0,
           targetType: 'Person',
           name: 'Новое событие',
+          id_category: 2,
+          id_cal_class: 3,
+          estimated_unix_time: 3600,
           start_date: '2026-07-22T10:00:00.000Z',
           end_date: '2026-07-22T11:00:00.000Z',
         },
@@ -96,8 +145,20 @@ describe('CalendarEventFormComponent', () => {
     })
 
     expect(wrapper.html()).toContain('label="Создать"')
+    const targetSelect = wrapper
+      .findAllComponents({ name: 'QSelect' })
+      .find((select) => select.props('label') === 'Кому')
+    expect(targetSelect?.exists()).toBe(true)
     await wrapper.find('form').trigger('submit')
 
+    expect(eventStoreMock.createEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id_category: 2,
+        id_cal_class: 3,
+        estimated_unix_time: 3600,
+        target: [null],
+      }),
+    )
     expect(eventStoreMock.createEvent).toHaveBeenCalledOnce()
   })
 
@@ -138,6 +199,41 @@ describe('CalendarEventFormComponent', () => {
 
     expect(eventStoreMock.createEvent).toHaveBeenCalledOnce()
     finishCreate()
+  })
+
+  test('lets a PWA user select a group alongside their own actor', async () => {
+    eventStoreMock.getTelegramGroups.mockResolvedValue([
+      { id: -100, title: 'Team' },
+    ])
+    const wrapper = shallowMount(CalendarEventFormComponent, {
+      props: {
+        task: {
+          id_task: 0,
+          name: 'Meeting',
+          start_date: '2026-10-04T10:00:00Z',
+        },
+        readonly: false,
+        taskId: null,
+      },
+      global: { stubs: { QForm: formStub } },
+    })
+    const select = wrapper
+      .findAllComponents({ name: 'QSelect' })
+      .find((item) => item.props('label') === 'Кому')!
+    select.vm.$emit('filter', 'team', (update: () => void) => update())
+    await flushPromises()
+    expect(eventStoreMock.getTelegramGroups).toHaveBeenCalledWith('team')
+    select.vm.$emit('update:modelValue', [
+      ...select.props('modelValue'),
+      select.props('options')[0],
+    ])
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(eventStoreMock.createEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: [null, { type: 'Group', id: -100, name: 'Team' }],
+      }),
+    )
   })
 
   test('shows the saved reminder date instead of a raw zero value', () => {

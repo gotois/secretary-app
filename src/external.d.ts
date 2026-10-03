@@ -30,43 +30,6 @@ declare module '@digitalbazaar/vc' {
   export function verifyCredential(options: unknown): Promise<unknown>
 }
 
-declare module 'ical-browser' {
-  export type Address = {
-    name: string
-    uri: string
-  }
-
-  export interface Event {
-    uid: string
-    start: Date
-    end?: Date
-    stamp?: Date
-    summary?: string
-    description?: string
-    location?: string
-    categories?: string[]
-    attach?: string | string[]
-    organizer?: string | Address | Address[]
-    attendee?: string | Address | Address[]
-    url?: URL
-  }
-
-  export class VEvent {
-    constructor(event: Event)
-  }
-
-  export default class ICalendar {
-    constructor(options?: {
-      id: string
-      method?: 'PUBLISH' | 'REQUEST' | 'REPLY' | 'CANCEL'
-      calscale?: 'GREGORIAN' | 'CHINESE'
-    })
-    addEvent(event: VEvent): void
-    readonly ics: string
-    download(filename: string): File
-  }
-}
-
 declare module '@schedule-x/theme-shadcn/dist/index.css'
 
 interface NetworkInformation extends EventTarget {

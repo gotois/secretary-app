@@ -1,33 +1,46 @@
-import { LocalStorage, SessionStorage } from 'quasar'
-import { createMemoryHistory, createRouter, createWebHistory } from 'vue-router'
+import { LocalStorage, Notify, SessionStorage } from 'quasar'
+import { createRouter, createWebHistory } from 'vue-router'
 import useAuthStore from '@/entities/oidc-session'
 import useLangStore from '@/shared/model/lang'
 import { deleteDatabases, reset } from '@/shared/lib/databaseService'
 import { ROUTE_NAMES } from '@/shared/config/routes'
 import routes from './routes'
 
-interface AppRouterOptions {
-  sessionMode?: 'internal' | 'external'
-}
-
-export function createAppRouter({
-  sessionMode = 'internal',
-}: AppRouterOptions = {}) {
-  let sessionChecked = false
+export function createAppRouter() {
+  let backendUnavailable = false
+  let sessionRestore: Promise<void> | undefined
   const router = createRouter({
     scrollBehavior: () => ({ left: 0, top: 0 }),
     routes,
-    history:
-      sessionMode === 'external'
-        ? createMemoryHistory(String(import.meta.env.QUASAR_VUE_ROUTER_BASE))
-        : createWebHistory(String(import.meta.env.QUASAR_VUE_ROUTER_BASE)),
+    history: createWebHistory(String(import.meta.env.QUASAR_VUE_ROUTER_BASE)),
   })
 
-  router.beforeEach(async (to) => {
-    if (sessionMode === 'external') {
-      return true
-    }
+  function restoreSession(authStore: ReturnType<typeof useAuthStore>) {
+    sessionRestore ??= authStore
+      .restoreSession()
+      .then((): void => undefined)
+      .catch((error: unknown) => {
+        backendUnavailable = true
+        const langStore = useLangStore()
+        console.warn(
+          'Unable to restore BFF session; continuing offline:',
+          error,
+        )
+        Notify.create({
+          group: false,
+          icon: 'cloud_off',
+          message: langStore.isRussian
+            ? 'Бэкенд недоступен. Приложение работает локально.'
+            : 'Backend unavailable. The app is working locally.',
+          timeout: 0,
+          type: 'warning',
+        })
+      })
 
+    return sessionRestore
+  }
+
+  router.beforeEach(async (to) => {
     if (to.path === '/reset') {
       LocalStorage.clear()
       SessionStorage.clear()
@@ -43,24 +56,21 @@ export function createAppRouter({
     }
 
     const authStore = useAuthStore()
-    if (!sessionChecked) {
-      try {
-        await authStore.restoreSession()
-      } catch (error) {
-        console.error('Unable to restore BFF session:', error)
-      } finally {
-        sessionChecked = true
-      }
-    }
-
     if (to.name === ROUTE_NAMES.PROMO || to.name === ROUTE_NAMES.PRIVACY) {
+      void restoreSession(authStore)
       return true
     }
 
+    await restoreSession(authStore)
+
     if (to.name === ROUTE_NAMES.LOGIN) {
-      if (authStore.isLoggedIn) {
+      if (backendUnavailable || authStore.isLoggedIn) {
         return { name: ROUTE_NAMES.ARCHIVE, query: { page: 1 } }
       }
+      return true
+    }
+
+    if (backendUnavailable) {
       return true
     }
 

@@ -92,24 +92,37 @@ bubblewrap install
 npm run build
 ```
 
-## Локальная проверка MCP App UI
+## MCP App
+
+PWA и интерфейс внутри ChatGPT используют общий календарь
+`widgets/calendar-view`: Schedule-X, ICS recurrence/VFREEBUSY и карточку
+события. Подключение MCP-хоста находится в `src/shared/lib/mcp`; оба режима используют
+единый `src/App.vue` и router.
+Первый результат приходит от хоста, следующие запросы вызывают MCP tools;
+в браузере общий календарь использует текущий backend.
 
 ```bash
-npm run build
+npm run build:mcp
 npm run dev:mcp-app
+npm run test:mcp-app
 ```
 
-После запуска откройте `http://127.0.0.1:4173`. Стенд поддерживает сценарии
-календаря, формы создания, ошибки tool, отсутствующего результата и
-отсутствующего JS-модуля. Вызовы tools обслуживаются fixture-данными в памяти и
-не записывают задачи в БД. Кнопка смены темы отправляет приложению уведомление
-об изменении host context.
+Сборка MCP — профиль Quasar SPA (`MCP_APP=true`), результат в `dist/mcp`.
+Основная PWA сохраняет прежние boot-файлы; embedded-профиль подключает i18n
+без Telegram boot, авторизации PWA и service worker. Разработка запускается
+через тот же Quasar dev server, HTTPS-сертификаты и порт 8080. Отдельного
+сервера стенда и fixture-хоста нет; интерфейс ожидает подключение MCP-хоста.
 
-Сертификат dev-сервера должен быть доверен браузеру и Node.js. При необходимости
-передайте CA через `NODE_EXTRA_CA_CERTS`. Кнопка перезапуска на стенде повторно
-загружает iframe после изменений приложения.
+`npm run build` также собирает MCP artifact и копирует его в `dist/pwa/mcp`.
+Для публикации задайте `VITE_MCP_ASSET_BASE=https://<app-host>/mcp/` либо
+`APP_URL=https://<app-host>`. Web получает готовый `/mcp/index.html` с этого
+хоста без изменений HTML. Static hosting отдаёт 404 для отсутствующего MCP
+artifact вместо PWA fallback; module assets доступны с CORS. Не удаляйте assets
+предыдущей версии первые десять минут после публикации.
 
-Полную интеграцию проверяйте через [подключение MCP-сервера в ChatGPT](https://developers.openai.com/plugins/deploy/connect-chatgpt).
+`npm run test:mcp-app` запускает unit/component-тесты MCP и общего календаря
+через Vitest без локального сервера и Chrome. Они также включены в `npm test`.
+Встраивание и обмен с настоящим ChatGPT проверяются в доступном ему MCP-хосте.
 
 ####  Сборка TWA
 

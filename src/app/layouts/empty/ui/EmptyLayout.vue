@@ -164,7 +164,7 @@ async function clickBack() {
   }
 
   await router.push({
-    name: ROUTE_NAMES.ROOT,
+    name: ROUTE_NAMES.ARCHIVE,
   })
 }
 

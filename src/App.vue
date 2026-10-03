@@ -1,15 +1,84 @@
 <template>
-  <RouterView />
+  <QLayout v-if="bridge">
+    <QPageContainer>
+      <ScheduleCalendarView
+        :calendar="bridge.content.value?.calendar"
+        :timezone="timezone"
+        :locale="bridge.context.value?.locale || 'ru-RU'"
+        :selected-date="selectedDate"
+        :loading="loading || bridge.connecting.value"
+        :error="error || bridge.error.value"
+        read-only
+        @refresh="refresh"
+        @select-date="selectDate"
+      />
+    </QPageContainer>
+  </QLayout>
+  <RouterView v-else />
 </template>
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { ScheduleCalendarView } from '@/widgets/calendar-view/presentation'
+import { createHostBridge } from '@/shared/lib/mcp/hostBridge'
 import { RouterView } from 'vue-router'
-import { useMeta } from 'quasar'
+import { useMeta, QLayout, QPageContainer, Dark } from 'quasar'
 import { isTWA } from '@/shared/lib/detector'
 import pkg from '../package.json'
 import twaMinifest from '../twa-manifest.json'
 
-const $t = useI18n().t
+const bridge =
+  import.meta.env.MCP_APP === 'true' ? createHostBridge() : undefined
+
+const timezone = computed(
+  () =>
+    bridge?.content.value?.timezone || bridge?.context.value?.timeZone || 'UTC',
+)
+const selectedDate = ref(Temporal.Now.plainDateISO(timezone.value).toString())
+const loading = ref(false)
+const error = ref<string>()
+const i18n = useI18n()
+if (bridge) {
+  watch(
+    bridge.content,
+    (content) => {
+      if (content?.selectedDate) selectedDate.value = content.selectedDate
+    },
+    { immediate: true },
+  )
+  watch(
+    bridge.context,
+    (context) => {
+      Dark.set(context?.theme === 'dark')
+      i18n.locale.value = context?.locale || 'ru-RU'
+    },
+    { immediate: true },
+  )
+}
+async function refresh() {
+  if (!bridge) return
+  if (loading.value || bridge.connecting.value) return
+  loading.value = true
+  error.value = undefined
+  try {
+    if (!bridge.connected.value) await bridge.connect()
+    else await bridge.loadDay(selectedDate.value, timezone.value)
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : String(cause)
+  } finally {
+    loading.value = false
+  }
+}
+function selectDate(day: string) {
+  selectedDate.value = day
+  void refresh()
+}
+onBeforeUnmount(() => {
+  void bridge?.close()
+})
+void bridge?.connect()
+
+const $t = i18n.t
 
 const webSite = {
   '@context': 'https://schema.org',

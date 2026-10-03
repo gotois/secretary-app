@@ -34,12 +34,15 @@
   "scripts": {
     "dev": "cross-env QUASAR_DEBUG=true quasar dev -m pwa",
     "dev:apk": "bubblewrap install",
-    "build": "quasar c && quasar build -m pwa && cp public/_redirects dist/pwa/ && cp public/_headers dist/pwa/ && cp public/.well-known/assetlinks.json dist/pwa/.well-known/",
+    "build": "quasar c && quasar build -m pwa && cp public/_redirects dist/pwa/ && cp public/_headers dist/pwa/ && cp public/.well-known/assetlinks.json dist/pwa/.well-known/ && npm run build:mcp && cp -R dist/mcp dist/pwa/mcp",
     "build:apk": "bubblewrap build",
     "fingerprint": "bubblewrap fingerprint generateAssetLinks --output=\"public/.well-known/assetlinks.json\"",
     "typecheck": "vue-tsc --noEmit",
     "pretest": "eslint . && npm run typecheck",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:mcp": "cross-env MCP_APP=true quasar build -m spa",
+    "dev:mcp-app": "cross-env MCP_APP=true quasar dev -m spa",
+    "test:mcp-app": "vitest run src/shared/lib/mcp src/widgets/calendar-view src/App.test.ts src/router/index.test.ts"
   },
   "dependencies": {
     "@digitalbazaar/ed25519-signature-2020": "5.4.0",
@@ -63,7 +66,7 @@
     "base58-universal": "2.0.0",
     "dexie": "4.0.11",
     "dexie-export-import": "4.1.4",
-    "ical-browser": "0.2.3",
+    "ical-browser": "0.3.0",
     "jspdf": "4.2.1",
     "jszip": "3.10.1",
     "marked": "15.0.7",
@@ -84,7 +87,6 @@
     "@babel/eslint-parser": "7.29.7",
     "@bubblewrap/cli": "1.22.3",
     "@eslint/eslintrc": "3.3.5",
-    "@js-temporal/polyfill": "0.5.1",
     "@quasar/app-vite": "3.8.2",
     "@types/node": "25.9.3",
     "@typescript-eslint/eslint-plugin": "8.61.0",
@@ -100,6 +102,7 @@
     "eslint-plugin-quasar": "1.1.0",
     "eslint-plugin-vue": "9.33.0",
     "jsdom": "29.1.1",
+    "temporal-spec": "0.3.0",
     "typescript": "7.0.2",
     "vite": "8.2.2",
     "vitest": "4.1.11",

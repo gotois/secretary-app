@@ -1,5 +1,4 @@
 import { date } from 'quasar'
-import { Temporal } from '@js-temporal/polyfill'
 import ICalendar, { VEvent } from 'ical-browser'
 import type { Event } from 'ical-browser'
 import { formatIcal } from '@/shared/lib/dateHelper'

@@ -2,7 +2,6 @@ import { computed } from 'vue'
 import { Platform } from 'quasar'
 import * as tgAppSDK from '@tma.js/sdk'
 import { host } from '../../../twa-manifest.json'
-import { isMcpAppHost } from './mcp/appHost'
 
 export const isTWA = computed(() => {
   return Platform.is.android && document.referrer.includes('android-app://')
@@ -20,5 +19,3 @@ export const isWebApp = computed(() => {
 export const isPWA = computed(() => {
   return document.location.host === host
 })
-
-export const isMcpApp = computed(() => isMcpAppHost(document))

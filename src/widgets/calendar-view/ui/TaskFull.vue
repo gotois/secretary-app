@@ -1,45 +1,22 @@
 <template>
-  <QCard
-    flat
-    square
-    bordered
+  <TaskDetails
+    :title="title"
+    :description="description"
+    :start-time="startTime"
+    :end-time="endTime"
+    :organizer="organizer"
+    :participant="participant"
+    :link="link"
+    :locale="langStore.language"
   >
-    <div class="row">
-      <div
-        class="column q-pl-md q-pb-sm"
-        style="max-width: calc(100% - 45px)"
-      >
-        <p
-          class="full-width q-pt-md text-subtitle1 text-uppercase text-weight-bold no-margin"
-          :class="{
-            'q-pb-md': !description,
-            'q-pb-none': description && !$q.platform.is.desktop,
-            'ellipsis': $q.platform.is.desktop,
-          }"
-        >
-          <!-- Todo поддержать проверку на верификацию криптоключом Solana -->
-          <!--template v-if="false /*isVerified(item, publicKey)*/">
-            <QIcon name="verified" />
-          </template>
-          <template v-else>
-            <QIcon name="error" color="warning" />
-          </template-->
-          {{ title }}
-          <QTooltip>{{ title }}</QTooltip>
-        </p>
-        <div
-          v-if="description"
-          class="full-width text-caption q-pb-md text-grey no-margin"
-          v-html="parse(description)"
-        />
-      </div>
-    </div>
-    <template v-if="attaches?.length">
+    <template
+      v-if="attaches?.length"
+      #attachments
+    >
       <QSeparator />
       <ContractCarouselComponent :model="attaches" />
     </template>
-    <QSeparator />
-    <QCardSection>
+    <template #actions>
       <QBtn
         fab-mini
         color="white"
@@ -55,63 +32,29 @@
       </QBtn>
       <QBtn
         fab-mini
+        color="white"
+        text-color="accent"
+        icon="edit"
+        class="absolute"
+        style="top: 0; left: 82px; transform: translateY(-50%)"
+        aria-label="Edit"
+        @click="emit('edit')"
+      >
+        <QTooltip>Edit</QTooltip>
+      </QBtn>
+      <QBtn
+        fab-mini
         color="negative"
         icon="delete"
         class="absolute"
-        style="top: 0; left: 82px; transform: translateY(-50%)"
+        style="top: 0; right: 18px; transform: translateY(-50%)"
         aria-label="Удалить событие"
         @click="emit('remove')"
       >
         <QTooltip>Удалить событие</QTooltip>
       </QBtn>
-      <div class="flex content-center text-overline no-margin q-pt-sm">
-        <QIcon
-          style="align-self: center"
-          class="q-pr-xs"
-          :name="itemScheduled(endTime) ? 'history_toggle_off' : 'schedule'"
-          :color="itemScheduled(endTime) ? 'negative' : 'orange-9'"
-        />
-        <span
-          :class="itemScheduled(endTime) ? 'text-negative' : 'text-orange-9'"
-        >
-          {{ prettyDate(startTime, endTime) }}
-        </span>
-      </div>
-      <div
-        v-if="organizer"
-        class="row items-center"
-      >
-        <div
-          class="flex overflow-hidden text-left ellipsis"
-          style="left: 32px; right: 0"
-        >
-          <QIcon :name="organizer.type === 'Organization' ? 'group' : 'face'" />
-          <div>
-            {{ organizer.name }}
-            {{ organizer.email }}
-          </div>
-        </div>
-      </div>
-      <div
-        v-if="participant?.length"
-        class="row items-center"
-      >
-        <div
-          class="flex overflow-hidden text-left ellipsis"
-          style="left: 32px; right: 0"
-        >
-          <QIcon :name="participant.length > 1 ? 'group' : 'face'" />
-          <span
-            v-for="({ url, name, email }, index) in participant"
-            :key="index"
-          >
-            {{ name }} {{ url }} {{ email }}
-          </span>
-        </div>
-      </div>
-      <div>
-        {{ link }}
-      </div>
+    </template>
+    <template #tags>
       <div
         v-if="tag.length"
         style="overflow-x: hidden"
@@ -138,8 +81,8 @@
           <QTooltip>{{ name }}</QTooltip>
         </QChip>
       </div>
-    </QCardSection>
-  </QCard>
+    </template>
+  </TaskDetails>
 </template>
 <script lang="ts" setup>
 import { PropType } from 'vue'
@@ -149,11 +92,8 @@ import {
   useQuasar,
   QChip,
   QBtn,
-  QIcon,
   QSeparator,
   QTooltip,
-  QCardSection,
-  QCard,
   copyToClipboard,
 } from 'quasar'
 import { useI18n } from 'vue-i18n'
@@ -168,8 +108,6 @@ import useContractStore from '@/entities/contract'
 import useLangStore from '@/shared/model/lang'
 import { openMap } from '@/shared/lib/geoService'
 import { keyPair } from '@/shared/lib/databaseService'
-import { parse } from '@/shared/lib/markdownHelper'
-import { isDateNotOk } from '@/shared/lib/dateHelper'
 import {
   readFilesPromise,
   getFileFromUrl,
@@ -189,6 +127,7 @@ import type {
   CredentialSubject,
 } from '@/shared/model/jsonld'
 import { ROUTE_NAMES } from '@/shared/config/routes'
+import TaskDetails from './TaskDetails.vue'
 
 enum Action {
   LINK = 'link',
@@ -274,10 +213,6 @@ const props = defineProps({
   },
 })
 
-function itemScheduled(endTime: Date) {
-  return endTime !== null && endTime < new Date()
-}
-
 async function signPresentation(verifiableCredential: VerifiableCredential) {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
   const presentation = vc.createPresentation({
@@ -308,21 +243,6 @@ async function verifyPresentation(presentation: Presentation) {
       : presentation.proof.challenge,
   })
   console.log('v', verify)
-}
-
-function prettyDate(startTime: Date, endTime?: Date) {
-  const formatterDate = new Intl.DateTimeFormat(langStore.language, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
-  if (!isDateNotOk(startTime) && (endTime === null || endTime === undefined)) {
-    return formatterDate.format(startTime)
-  }
-  if (isDateNotOk(startTime) || isDateNotOk(endTime)) {
-    return ''
-  }
-  return formatterDate.format(startTime) + ' — ' + formatterDate.format(endTime)
 }
 
 function toCalendarAddress(agent: Agent) {
@@ -529,9 +449,13 @@ function onSheet() {
             summary: props.title,
             description: props.description,
             location: props.location ?? undefined,
-            stamp: new Date(),
-            start: props.startTime,
-            end: props.endTime ?? undefined,
+            stamp: Temporal.Now.instant(),
+            start: Temporal.Instant.fromEpochMilliseconds(
+              props.startTime.getTime(),
+            ),
+            end: props.endTime
+              ? Temporal.Instant.fromEpochMilliseconds(props.endTime.getTime())
+              : undefined,
             categories: props.tag,
             attach: props.attaches.map((attach) => attach.url),
             organizer,

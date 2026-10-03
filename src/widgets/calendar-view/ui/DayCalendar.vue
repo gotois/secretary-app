@@ -12,8 +12,9 @@
       }"
     >
       {{
-        new Intl.DateTimeFormat(langStore.language, {
+        new Intl.DateTimeFormat(locale, {
           weekday: 'short',
+          timeZone: timezone,
         }).format(props.day)
       }}
     </div>
@@ -24,26 +25,28 @@
         'text-black-8': $q.dark.isActive,
       }"
     >
-      {{ props.day.getDate() }}
+      {{ dayDate.day }}
     </div>
     <QTooltip
       anchor="bottom middle"
       self="bottom middle"
     >
-      {{ date.formatDate(props.day, 'YYYY-MM-DD') }}
+      {{ dayDate.toString() }}
     </QTooltip>
   </QBtn>
 </template>
 <script lang="ts" setup>
 import { PropType, computed } from 'vue'
-import { useQuasar, QBtn, QTooltip, date } from 'quasar'
-import useLangStore from '@/shared/model/lang'
-import { isCurrentDate } from '@/features/contract-calendar'
+import { useQuasar, QBtn, QTooltip } from 'quasar'
 
 const $q = useQuasar()
-const langStore = useLangStore()
 
 const props = defineProps({
+  locale: { type: String, default: () => navigator.language },
+  timezone: {
+    type: String,
+    default: () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+  },
   day: {
     type: Date as PropType<Date>,
     required: true,
@@ -54,11 +57,16 @@ const props = defineProps({
   },
 })
 
+const dayDate = computed(() =>
+  Temporal.Instant.fromEpochMilliseconds(props.day.getTime())
+    .toZonedDateTimeISO(props.timezone)
+    .toPlainDate(),
+)
+
 const color = computed(() => {
-  const { day, selectedDay } = props
-  if (isCurrentDate(day, selectedDay)) {
+  if (props.selectedDay && dayDate.value.toString() === props.selectedDay) {
     return 'green-6'
-  } else if (isCurrentDate(day)) {
+  } else if (dayDate.value.equals(Temporal.Now.plainDateISO(props.timezone))) {
     return $q.dark.isActive ? 'yellow-10' : 'yellow-9'
   }
   return 'transparent'

@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import ICAL from 'ical.js'
 import {
   createCal,
   formatCalendarDateTime,
@@ -14,13 +15,22 @@ describe('calendar file creation', () => {
       event: {
         uid: 'event-1@example.com',
         summary: 'Project meeting',
-        start: new Date('2026-07-22T10:00:00Z'),
-        end: new Date('2026-07-22T11:00:00Z'),
+        start: Temporal.Instant.from('2026-07-22T10:00:00Z'),
+        end: Temporal.Instant.from('2026-07-22T11:00:00Z'),
       },
     })
 
     expect(file.name).toBe('calendar.ics')
     expect(file.type).toBe('text/calendar')
+    const event = new ICAL.Component(
+      ICAL.parse(await file.text()),
+    ).getFirstSubcomponent('vevent')!
+    expect(new ICAL.Event(event).startDate.toJSDate().toISOString()).toBe(
+      '2026-07-22T10:00:00.000Z',
+    )
+    expect(new ICAL.Event(event).endDate.toJSDate().toISOString()).toBe(
+      '2026-07-22T11:00:00.000Z',
+    )
     await expect(file.text()).resolves.toContain(
       'PRODID:-//Secretary//Calendar//EN',
     )
